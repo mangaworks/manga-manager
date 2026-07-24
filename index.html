@@ -3,328 +3,270 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f7f2e8">
-<title>マンガ管理</title>
+<meta name="theme-color" content="#080808">
+<title>漫画仕入れ管理 Pro 2.0</title>
 <style>
 :root {
-  --bg:#f7f2e8; --card:#fff; --ink:#2f2a24; --sub:#766d63;
-  --line:#e6ded2; --accent:#58a96b; --accent2:#edf7ef; --warn:#fff4d8;
+  --bg:#090909; --panel:#161616; --panel2:#202020; --line:#343434;
+  --text:#f6f2e8; --muted:#aaa; --gold:#f5c84c; --green:#28c76f;
+  --red:#ff5d5d; --blue:#62a8ff;
 }
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif}
-header{position:sticky;top:0;z-index:10;background:rgba(247,242,232,.96);backdrop-filter:blur(10px);padding:14px 14px 10px;border-bottom:1px solid var(--line)}
-h1{font-size:24px;margin:0 0 10px}
-.toolbar{display:grid;grid-template-columns:1fr auto;gap:8px}
-input,select,button{font:inherit}
-input,select{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;background:#fff}
-button{border:0;border-radius:10px;padding:10px 13px;cursor:pointer}
-.primary{background:var(--accent);color:white;font-weight:700}
-.ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
-main{max-width:820px;margin:auto;padding:14px 14px 90px}
-.summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-.badge{background:#fff;border:1px solid var(--line);border-radius:999px;padding:7px 10px;font-size:13px}
-.category{margin:18px 0 8px;font-size:18px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;margin:9px 0;overflow:hidden;box-shadow:0 2px 8px rgba(40,30,20,.04)}
-.titleRow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px;cursor:pointer}
-.titleText{font-weight:800}
-.count{font-size:12px;color:var(--sub);white-space:nowrap}
-.details{display:none;padding:0 14px 14px;border-top:1px solid var(--line)}
-.card.open .details{display:block}
-.note{background:var(--warn);padding:9px 10px;border-radius:9px;font-size:13px;margin-top:12px}
-.items{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.item{background:#eee8df;color:var(--ink);min-width:52px;font-weight:700}
-.item.done{background:var(--accent);color:#fff}
-.smallActions{display:flex;gap:8px;margin-top:12px}
-.smallActions button{padding:8px 10px;font-size:13px}
-.addbox{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:22px}
-.addgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.addgrid .full{grid-column:1/-1}
-.muted{color:var(--sub);font-size:13px}
-.empty{text-align:center;padding:28px;color:var(--sub)}
-@media(max-width:560px){
-  .addgrid{grid-template-columns:1fr}
-  .addgrid .full{grid-column:auto}
-  h1{font-size:22px}
-}
-
-/* 簡易パスワードロック */
-#lockScreen{
-  position:fixed;inset:0;z-index:9999;
-  display:flex;align-items:center;justify-content:center;
-  padding:22px;background:var(--bg);
-}
-#lockBox{
-  width:min(420px,100%);background:#fff;border:1px solid var(--line);
-  border-radius:18px;padding:24px;box-shadow:0 12px 40px rgba(40,30,20,.14);
-  text-align:center;
-}
-#lockBox h2{margin:0 0 8px;font-size:23px}
-#lockBox p{margin:0 0 16px;color:var(--sub);font-size:14px}
-#lockPassword{font-size:18px;text-align:center;letter-spacing:3px}
-#unlockButton{width:100%;margin-top:10px;padding:13px}
-#lockError{min-height:22px;margin-top:10px;color:#c53d3d;font-weight:700;font-size:14px}
-body.locked > header,body.locked > main{display:none}
-
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:linear-gradient(#050505,#101010);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;min-height:100vh}
+button,input{font:inherit}
+#splash{position:fixed;inset:0;z-index:50;background:#000;display:grid;place-items:center;transition:.45s}
+#splash.hide{opacity:0;pointer-events:none}
+.logo{text-align:center}
+.logo .ball{font-size:58px;filter:drop-shadow(0 0 16px #ff9d00)}
+.logo h1{margin:10px 0 4px;color:var(--gold);letter-spacing:.08em;font-size:28px}
+.logo p{color:#ddd;margin:0;font-weight:700}
+header{position:sticky;top:0;z-index:10;background:rgba(8,8,8,.94);backdrop-filter:blur(10px);border-bottom:1px solid #2b2b2b;padding:12px}
+.topline{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+h1{font-size:20px;margin:0;flex:1;color:var(--gold)}
+.badge{font-size:12px;background:#2b240f;color:var(--gold);padding:6px 9px;border-radius:999px;border:1px solid #5c4b19}
+.search{display:flex;gap:8px}
+.search input{width:100%;border:1px solid var(--line);background:#151515;color:#fff;border-radius:13px;padding:13px 14px;outline:none}
+.search input:focus{border-color:var(--gold)}
+.reset{border:0;background:#292929;color:#ddd;border-radius:12px;padding:0 12px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px 12px 0;max-width:900px;margin:auto}
+.stat{background:var(--panel);border:1px solid #292929;border-radius:14px;padding:11px;text-align:center}
+.stat b{display:block;font-size:19px;color:var(--gold)} .stat span{font-size:11px;color:var(--muted)}
+.filters{display:flex;gap:8px;overflow:auto;padding:10px 12px;max-width:900px;margin:auto;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.filter{white-space:nowrap;border:1px solid #373737;background:#181818;color:#ddd;border-radius:999px;padding:9px 12px}
+.filter.active{background:var(--gold);color:#111;border-color:var(--gold);font-weight:800}
+main{padding:0 12px 90px;max-width:900px;margin:auto}
+.category-title{font-size:14px;color:var(--gold);margin:18px 4px 8px;font-weight:800}
+.card{background:var(--panel);border:1px solid #2d2d2d;border-radius:16px;margin-bottom:10px;overflow:hidden}
+.card-head{display:flex;align-items:center;padding:15px;cursor:pointer;gap:10px}
+.card-head strong{flex:1;font-size:16px}
+.chev{color:var(--gold);transition:.2s}
+.card.open .chev{transform:rotate(90deg)}
+.card-body{display:none;border-top:1px solid #292929;padding:12px}
+.card.open .card-body{display:block}
+.group{margin-bottom:14px} .group:last-child{margin-bottom:0}
+.group-label{font-size:12px;color:#c9b66a;margin-bottom:8px;font-weight:800}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid #494949;background:#222;color:#fff;border-radius:12px;padding:10px 12px;min-width:46px;text-align:center;font-weight:700;user-select:none}
+.chip.done{background:var(--green);border-color:var(--green);color:#04140b}
+.chip.stock{border-color:#4f7db5;color:#bcd8ff;background:#182432}
+.chip.stock.done{background:var(--green);border-color:var(--green);color:#04140b}
+.chip.special{border-color:#725fb0;color:#d8ccff;background:#241e38}
+.note{background:#2a2617;color:#ffe590;border-left:4px solid var(--gold);padding:10px 12px;border-radius:10px;line-height:1.5}
+.counter-row{display:flex;align-items:center;gap:10px;background:#222;border:1px solid #3a3a3a;border-radius:12px;padding:10px;margin-bottom:8px}
+.counter-row:last-child{margin-bottom:0}
+.counter-name{flex:1;font-weight:700}
+.counter-boxes{display:flex;gap:6px}
+.counter-box{width:24px;height:24px;border:1px solid #666;border-radius:6px;background:#111}
+.counter-box.on{background:var(--green);border-color:var(--green)}
+.empty{text-align:center;color:#999;padding:50px 20px}
+footer{position:fixed;bottom:0;left:0;right:0;background:rgba(8,8,8,.96);border-top:1px solid #292929;padding:10px 12px calc(10px + env(safe-area-inset-bottom));z-index:11}
+.footer-inner{max-width:900px;margin:auto;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.footer-btn{border:1px solid #444;background:#1a1a1a;color:#eee;border-radius:13px;padding:12px}
+.footer-btn.primary{background:var(--gold);color:#111;border-color:var(--gold);font-weight:800}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:60;display:none;align-items:flex-end}
+.modal.show{display:flex}
+.sheet{background:#171717;width:100%;max-height:88vh;overflow:auto;border-radius:22px 22px 0 0;padding:18px}
+.sheet h2{margin:0 0 14px;color:var(--gold)}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;color:#bbb;margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;background:#0f0f0f;color:white;border:1px solid #444;border-radius:12px;padding:12px}
+.actions{display:flex;gap:8px}
+.actions button{flex:1;border:0;border-radius:12px;padding:12px}
+.save{background:var(--gold);font-weight:800} .cancel{background:#333;color:white}
+@media(min-width:700px){.card-head strong{font-size:17px}}
 </style>
 </head>
-<body class="locked">
-
-<div id="lockScreen">
-  <div id="lockBox">
-    <div style="font-size:42px;margin-bottom:8px">🔒</div>
-    <h2>マンガ欠品管理</h2>
-    <p>パスワードを入力してください</p>
-    <input id="lockPassword" type="password" inputmode="numeric" autocomplete="current-password" placeholder="パスワード">
-    <button class="primary" id="unlockButton">開く</button>
-    <div id="lockError"></div>
-  </div>
-</div>
+<body>
+<div id="splash"><div class="logo"><div class="ball">⭐</div><h1>MANGA STOCK PRO</h1><p>BOOKOFF 仕入れ管理</p></div></div>
 
 <header>
-  <h1>📚 マンガ欠品管理</h1>
-  <div class="toolbar">
-    <input id="search" placeholder="タイトルを検索">
-    <button class="ghost" id="clearSearch">クリア</button>
+  <div class="topline">
+    <h1>漫画仕入れ管理 Pro 2.0</h1>
+    <span class="badge">自動保存</span>
+  </div>
+  <div class="search">
+    <input id="search" type="search" placeholder="作品名・巻数・メモを検索">
+    <button class="reset" id="clearSearch">×</button>
   </div>
 </header>
 
-<main>
-  <div class="summary">
-    <div class="badge" id="workCount"></div>
-    <div class="badge" id="itemCount"></div>
-    <div class="badge" id="doneCount"></div>
-  </div>
-  <div id="app"></div>
+<section class="stats">
+  <div class="stat"><b id="titleCount">0</b><span>作品数</span></div>
+  <div class="stat"><b id="targetCount">0</b><span>対象数</span></div>
+  <div class="stat"><b id="doneCount">0</b><span>購入済み</span></div>
+</section>
 
-  <section class="addbox">
-    <h2 style="margin-top:0;font-size:18px">＋ 新しい作品を追加</h2>
-    <div class="addgrid">
-      <select id="newCategory">
-        <option>男性コミック</option><option>女性コミック</option><option>ワイド</option>
-        <option>文庫漫画</option><option>小説</option><option>ハードカバー</option><option>その他</option>
-      </select>
-      <input id="newTitle" placeholder="作品名">
-      <input class="full" id="newItems" placeholder="欠品（例：1,3,5,6,7,8,10以降）">
-      <input class="full" id="newNote" placeholder="メモ（任意）">
-      <button class="primary full" id="addTitle">追加する</button>
-    </div>
-    <p class="muted">購入できた項目をタップすると緑色になります。状態はこの端末に自動保存されます。</p>
-  </section>
-</main>
+<div class="filters" id="filters"></div>
+<main id="app"></main>
+
+<footer>
+  <div class="footer-inner">
+    <button class="footer-btn" id="closeAll">すべて閉じる</button>
+    <button class="footer-btn primary" id="addTitle">＋ 作品追加</button>
+  </div>
+</footer>
+
+<div class="modal" id="modal">
+  <div class="sheet">
+    <h2>作品を追加</h2>
+    <div class="field"><label>カテゴリー</label><select id="newCategory"></select></div>
+    <div class="field"><label>作品名</label><input id="newTitle" placeholder="例：キングダム"></div>
+    <div class="field"><label>巻数・内容</label><textarea id="newValues" rows="3" placeholder="例：12, 15, 18〜20"></textarea></div>
+    <div class="field"><label>種類</label><select id="newMode">
+      <option value="missing">不足</option><option value="stock">在庫あり</option><option value="special">特殊条件</option><option value="note">メモ</option>
+    </select></div>
+    <div class="actions"><button class="cancel" id="cancelAdd">キャンセル</button><button class="save" id="saveAdd">保存</button></div>
+  </div>
+</div>
 
 <script>
+const MASTER = [{"category": "少年コミック", "items": [{"title": "ハンターハンター", "groups": [{"label": "① 在庫あり", "mode": "stock", "values": ["19", "31", "32"]}]}, {"title": "ブラックジャック", "groups": [{"label": "不足", "mode": "missing", "values": ["1", "3", "17", "19", "23", "25"]}]}, {"title": "ボボボーボ", "groups": [{"label": "① 不足", "mode": "missing", "values": ["17", "19", "21"]}, {"label": "② 在庫あり", "mode": "stock", "values": ["18"]}]}, {"title": "ボボボー新説", "groups": [{"label": "不足", "mode": "missing", "values": ["4", "5"]}]}, {"title": "ゲゲゲの鬼太郎 妖怪千物語", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["2", "3"]}]}, {"title": "ゲゲゲの鬼太郎 新妖怪千物語", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["1"]}]}, {"title": "ナルト", "groups": [{"label": "① 在庫あり", "mode": "stock", "values": ["臨兵闘者皆列在忍", "疾風絵巻", "十年百忍"]}, {"label": "② 在庫あり", "mode": "stock", "values": ["列在 2セット"]}]}, {"title": "デスノート", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["5", "13"]}]}, {"title": "ブリーチ", "groups": [{"label": "欲しい物", "mode": "wanted_count", "values": [{"name": "Souls", "need": 3}, {"name": "アンマスクト", "need": 2}, {"name": "マスクト", "need": 1}]}]}, {"title": "ケロロ軍曹", "groups": [{"label": "不足", "mode": "missing", "values": ["27", "29", "30", "31", "32", "33", "34", "35"]}, {"label": "在庫あり", "mode": "stock", "values": ["緑", "赤"]}]}, {"title": "暗殺教室", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["A", "B"]}]}, {"title": "ドラゴンクエストモンスターズプラス 旧版", "groups": [{"label": "不足", "mode": "missing", "values": ["3"]}]}, {"title": "学園トリコ", "groups": [{"label": "不足", "mode": "missing", "values": ["8", "9"]}]}, {"title": "ドラゴンボール", "groups": [{"label": "① 初版不足", "mode": "missing", "values": ["1", "2"]}, {"label": "② 不足", "mode": "missing", "values": ["3", "6", "16", "24", "39"]}, {"label": "③ 在庫あり", "mode": "stock", "values": ["7", "18", "29", "37", "40", "42"]}]}, {"title": "ポケットモンスター（アニメ版）", "groups": [{"label": "不足", "mode": "missing", "values": ["1", "6", "8", "9", "15", "17", "18", "19", "20"]}]}, {"title": "ポケットモンスター（フィルム）金銀編", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["14", "16", "24"]}]}, {"title": "ポケモンゲットだぜ", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["2", "3", "4"]}]}, {"title": "テニスの王子様", "groups": [{"label": "不足", "mode": "missing", "values": ["青10.5", "40.5"]}]}, {"title": "ドラえもん大長編", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["1", "2", "3", "6", "7", "8", "9", "21"]}]}]}, {"category": "青年コミック", "items": [{"title": "ベルセルク", "groups": [{"label": "不足", "mode": "missing", "values": ["2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "26", "31", "33", "34", "35", "39", "43"]}]}, {"title": "ゴーストアンドレディ", "groups": [{"label": "不足", "mode": "missing", "values": ["上"]}]}, {"title": "頭文字D", "groups": [{"label": "① 不足", "mode": "missing", "values": ["45", "46", "47"]}, {"label": "② 不足", "mode": "missing", "values": ["39", "41", "44", "45", "46", "47"]}, {"label": "メモ", "mode": "note", "values": ["43巻オレンジ以降は買い"]}]}, {"title": "バイオハザード ヘヴンリー", "groups": [{"label": "不足", "mode": "missing", "values": ["1", "2", "3"]}]}, {"title": "プラネテス", "groups": [{"label": "不足", "mode": "missing", "values": ["4"]}]}, {"title": "ジブリ", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["千と千尋 3セット", "トトロ 1セット", "もののけ 1セット", "ハウル 1セット", "ゲド戦記 1セット", "ポニョ 1セット", "アリエッティ 1セット", "メアリ 1セット", "火垂るの墓 1セット", "猫の恩返し 1セット"]}]}, {"title": "宇宙兄弟", "groups": [{"label": "① 不足", "mode": "special", "values": ["26巻以降"]}, {"label": "② 不足", "mode": "special", "values": ["21巻以外"]}]}, {"title": "三日月よ怪物と踊れ", "groups": [{"label": "不足", "mode": "special", "values": ["2巻以外"]}]}, {"title": "アルパインクライマー", "groups": [{"label": "不足", "mode": "missing", "values": ["7"]}]}, {"title": "コードギアス 双貌のオズO2", "groups": [{"label": "不足", "mode": "missing", "values": [".5巻"]}]}, {"title": "ペルソナ4", "groups": [{"label": "不足", "mode": "missing", "values": ["13"]}]}, {"title": "にゃんこ大戦争", "groups": [{"label": "不足", "mode": "special", "values": ["2", "4〜8", "10〜"]}]}, {"title": "ねこねこ日本史", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["1", "3", "外伝1", "外伝2"]}]}, {"title": "英語ドラえもん", "groups": [{"label": "不足", "mode": "special", "values": ["4〜6", "8〜"]}]}]}, {"category": "少女コミック", "items": [{"title": "動物のお医者さん", "groups": [{"label": "不足", "mode": "missing", "values": ["1"]}]}, {"title": "なまいきざかり", "groups": [{"label": "不足", "mode": "missing", "values": ["20", "21", "22", "23"]}]}, {"title": "セーラームーン", "groups": [{"label": "不足", "mode": "missing", "values": ["14", "15"]}]}, {"title": "セーラームーン 新装版", "groups": [{"label": "不足", "mode": "missing", "values": ["6", "10", "11"]}]}, {"title": "セーラームーン（フィルム）", "groups": [{"label": "不足", "mode": "special", "values": ["6〜"]}]}, {"title": "東京ミュウミュウ 新装版", "groups": [{"label": "不足", "mode": "missing", "values": ["3", "8", "9", "10"]}]}, {"title": "神様はじめました", "groups": [{"label": "① 不足", "mode": "missing", "values": ["23", "24"]}, {"label": "② 不足", "mode": "special", "values": ["16巻以外"]}]}, {"title": "ちびまる子", "groups": [{"label": "① 不足", "mode": "missing", "values": ["1", "7", "11", "13", "14", "16", "17", "18"]}]}]}, {"category": "女性コミック", "items": [{"title": "凪のお暇", "groups": [{"label": "不足", "mode": "missing", "values": ["12"]}]}]}, {"category": "ワイド", "items": [{"title": "つば九郎", "groups": [{"label": "不足", "mode": "special", "values": ["5〜"]}]}, {"title": "こどものおもちゃ 完全版", "groups": [{"label": "不足", "mode": "missing", "values": ["7"]}]}, {"title": "ホワッツマイケル", "groups": [{"label": "不足", "mode": "missing", "values": ["6", "7", "8"]}]}, {"title": "パラダイスキス", "groups": [{"label": "必要冊数", "mode": "wanted_count", "values": [{"name": "4巻", "need": 3}, {"name": "5巻", "need": 2}]}]}]}, {"category": "文庫漫画", "items": [{"title": "火の鳥（文庫）", "groups": [{"label": "① 不足", "mode": "missing", "values": ["8", "10", "11"]}, {"label": "② 不足", "mode": "missing", "values": ["8", "10", "11"]}]}, {"title": "バナナフィッシュ（文庫）", "groups": [{"label": "不足", "mode": "missing", "values": ["7", "10", "11"]}]}, {"title": "怪盗ジャンヌ（文庫）", "groups": [{"label": "不足", "mode": "missing", "values": ["5"]}]}, {"title": "あさきゆめみし（文庫）", "groups": [{"label": "不足", "mode": "missing", "values": ["5", "7"]}]}, {"title": "ブラックジャック（文庫）", "groups": [{"label": "不足", "mode": "missing", "values": ["17"]}]}, {"title": "デスノート（文庫）", "groups": [{"label": "不足", "mode": "special", "values": ["2〜"]}]}, {"title": "日出処の天子", "groups": [{"label": "不足", "mode": "missing", "values": ["5"]}]}, {"title": "有閑倶楽部（文庫）", "groups": [{"label": "不足", "mode": "missing", "values": ["10"]}]}, {"title": "ブッダ（文庫）", "groups": [{"label": "① 不足", "mode": "missing", "values": ["9", "10", "11", "13"]}, {"label": "② 不足", "mode": "missing", "values": ["1", "6", "7", "8", "9", "10", "11", "12", "13"]}]}]}, {"category": "小説", "items": [{"title": "シャーロックホームズ（新版）", "groups": [{"label": "① 不足", "mode": "missing", "values": ["7", "10"]}]}, {"title": "中二病でも恋がしたい", "groups": [{"label": "不足", "mode": "missing", "values": ["4"]}]}, {"title": "涼宮ハルヒ", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["1〜11"]}]}, {"title": "小野不由美（十二国記）", "groups": [{"label": "目印", "mode": "note", "values": ["紺色カバーで花のようなライン／青い背表紙シリーズ"]}, {"label": "不足", "mode": "missing", "values": ["風の万里 黎明の空 下", "華胥の幽夢", "黄昏の岸 暁の天 下巻（白背表紙）"]}]}]}, {"category": "児童書", "items": [{"title": "ドラえもん科学シリーズ", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["ロボット世界", "未来のくらし"]}]}, {"title": "ジュニア空想", "groups": [{"label": "不足", "mode": "special", "values": ["8〜10", "15", "17", "20〜"]}]}, {"title": "人狼サバイバル", "groups": [{"label": "不足", "mode": "special", "values": ["3〜6", "9〜12", "20〜"]}]}, {"title": "魔女の宅急便（ハードカバー）", "groups": [{"label": "不足", "mode": "missing", "values": ["5"]}]}, {"title": "ポケモンをさがせ", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["ポケモンをさがせ2", "ベストウィッシュ", "金銀", "クリスタル", "あたらしいぼうけん", "ルビーサファイア", "エメラルド"]}]}, {"title": "星のカービィ", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["7", "12", "13", "45"]}]}]}, {"category": "その他", "items": [{"title": "リラックマ生活シリーズ", "groups": [{"label": "不足", "mode": "special", "values": ["2", "5", "8〜11", "13〜14"]}]}, {"title": "ピーターラビットの絵本", "groups": [{"label": "青ラベル① 在庫あり", "mode": "stock", "values": ["1", "4"]}, {"label": "白ラベル① 在庫あり", "mode": "stock", "values": ["1", "2", "4", "5"]}]}, {"title": "ももこ", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["ももこの21世紀 4"]}]}, {"title": "ワンピースマガジン", "groups": [{"label": "欲しい物", "mode": "missing", "values": ["4", "9"]}]}]}];
+const STORAGE_KEY = "mangaStockPro2State";
+const CUSTOM_KEY = "mangaStockPro2Custom";
+let state = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+let custom = JSON.parse(localStorage.getItem(CUSTOM_KEY) || "[]");
+let activeCategory = "すべて";
 
-const LOCK_HASH = "72d2e84cf692f248441dfbae20aeb2910264c7d183b110cabdddb5c774a984a4";
-const LOCK_STORAGE_KEY = "mangaManagerUnlockedUntil";
-const LOCK_DAYS = 30;
+const app = document.getElementById("app");
+const filters = document.getElementById("filters");
+const search = document.getElementById("search");
 
-async function sha256(text) {
-  const data = new TextEncoder().encode(text);
-  const digest = await crypto.subtle.digest("SHA-256", data);
-  return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
-function unlockApp(remember = true) {
-  document.body.classList.remove("locked");
-  const screen = document.getElementById("lockScreen");
-  if (screen) screen.remove();
-  if (remember) {
-    const until = Date.now() + LOCK_DAYS * 24 * 60 * 60 * 1000;
-    localStorage.setItem(LOCK_STORAGE_KEY, String(until));
+function allData() {
+  const cloned = JSON.parse(JSON.stringify(MASTER));
+  for (const c of custom) {
+    let cat = cloned.find(x => x.category === c.category);
+    if (!cat) { cat = {category:c.category, items:[]}; cloned.push(cat); }
+    cat.items.push(c.item);
   }
+  return cloned;
+}
+function keyFor(cat,title,gi,vi) { return [cat,title,gi,vi].join("|"); }
+function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function saveCustom() { localStorage.setItem(CUSTOM_KEY, JSON.stringify(custom)); }
+
+function renderFilters() {
+  const cats = ["すべて", ...allData().map(x=>x.category)];
+  filters.innerHTML = cats.map(c=>`<button class="filter ${c===activeCategory?"active":""}" data-cat="${c}">${c}</button>`).join("");
+  filters.querySelectorAll(".filter").forEach(b=>b.onclick=()=>{activeCategory=b.dataset.cat; render();});
 }
 
-async function tryUnlock() {
-  const input = document.getElementById("lockPassword");
-  const error = document.getElementById("lockError");
-  const entered = input.value;
-  if (!entered) {
-    error.textContent = "パスワードを入力してください";
-    return;
-  }
-  const enteredHash = await sha256(entered);
-  if (enteredHash === LOCK_HASH) {
-    unlockApp(true);
-  } else {
-    error.textContent = "パスワードが違います";
-    input.value = "";
-    input.focus();
-  }
+function itemMatches(item,q) {
+  if (!q) return true;
+  const text = JSON.stringify(item).toLowerCase();
+  return text.includes(q.toLowerCase());
 }
 
-const unlockedUntil = Number(localStorage.getItem(LOCK_STORAGE_KEY) || 0);
-if (unlockedUntil > Date.now()) {
-  unlockApp(false);
-} else {
-  localStorage.removeItem(LOCK_STORAGE_KEY);
-  document.getElementById("unlockButton").addEventListener("click", tryUnlock);
-  document.getElementById("lockPassword").addEventListener("keydown", e => {
-    if (e.key === "Enter") tryUnlock();
-  });
-  setTimeout(() => document.getElementById("lockPassword")?.focus(), 50);
-}
-
-const INITIAL_DATA = [{"category": "男性コミック", "title": "コナン", "items": ["19", "23", "33", "38", "87", "100", "102", "103", "105", "106", "107"], "note": ""}, {"category": "男性コミック", "title": "ハンターハンター ①", "items": ["33以降"], "note": ""}, {"category": "男性コミック", "title": "ハンターハンター ②", "items": ["33", "35以降"], "note": ""}, {"category": "男性コミック", "title": "ハンターハンター ③", "items": ["2", "3", "5", "7", "8", "9", "11", "12", "13", "14", "17", "18", "20", "21", "22", "23", "24", "25", "26", "27", "30以降"], "note": ""}, {"category": "男性コミック", "title": "ナルト", "items": [], "note": "臨・兵・闘・者・陣・列・在は在庫有り"}, {"category": "男性コミック", "title": "ブラックジャック", "items": ["1", "3", "4", "17", "19", "23", "24", "25"], "note": ""}, {"category": "男性コミック", "title": "ドラゴンボール ①", "items": ["初版の2"], "note": ""}, {"category": "男性コミック", "title": "ドラゴンボール ②", "items": ["3", "6", "16", "24", "27", "28", "32", "34", "38", "42"], "note": ""}, {"category": "男性コミック", "title": "ボボボーボ", "items": ["17", "18"], "note": ""}, {"category": "男性コミック", "title": "ボボボー新説", "items": ["2", "3", "4", "5"], "note": ""}, {"category": "男性コミック", "title": "テニスの王子様", "items": ["10.5"], "note": ""}, {"category": "男性コミック", "title": "新テニスの王子様", "items": ["10.5"], "note": "23.5以外"}, {"category": "男性コミック", "title": "デスノート", "items": ["1", "2", "3", "4", "5", "6", "7", "8"], "note": "9・10・11・12は在庫有り"}, {"category": "男性コミック", "title": "宇宙兄弟", "items": ["26以降"], "note": ""}, {"category": "男性コミック", "title": "ヒストリエ", "items": ["12"], "note": ""}, {"category": "男性コミック", "title": "ベルセルク", "items": ["1", "43"], "note": ""}, {"category": "男性コミック", "title": "頭文字D", "items": ["①"], "note": ""}, {"category": "男性コミック", "title": "へうげもの", "items": ["17", "18", "19", "21", "22", "23", "24", "25"], "note": ""}, {"category": "男性コミック", "title": "プラネテス", "items": ["1", "3", "4"], "note": "原文「1.3.4時」は「1・3・4」として登録"}, {"category": "男性コミック", "title": "ゴーストアンドレディ", "items": ["上"], "note": ""}, {"category": "男性コミック", "title": "にゃんこ大戦争", "items": ["2", "4", "5", "6", "7", "8", "10以降"], "note": ""}, {"category": "男性コミック", "title": "英語ドラえもん", "items": ["2", "4以降"], "note": ""}, {"category": "女性コミック", "title": "なまいきざかり", "items": ["20", "21", "22", "23"], "note": ""}, {"category": "女性コミック", "title": "セーラームーン", "items": ["14", "15"], "note": ""}, {"category": "女性コミック", "title": "はいからさんが通る（KC）", "items": ["4"], "note": ""}, {"category": "女性コミック", "title": "NANA", "items": ["3", "4", "5"], "note": ""}, {"category": "女性コミック", "title": "ちびまる子", "items": ["16"], "note": ""}, {"category": "女性コミック", "title": "動物のお医者さん（愛蔵版）", "items": ["1", "4"], "note": ""}, {"category": "女性コミック", "title": "コジコジ（りぼん）", "items": ["3", "4"], "note": ""}, {"category": "女性コミック", "title": "凪のお暇", "items": ["11"], "note": ""}, {"category": "女性コミック", "title": "東京ミュウミュウ 新装版", "items": ["3", "8", "9", "10"], "note": ""}, {"category": "ワイド", "title": "怪盗ジャンヌ 完全版", "items": ["6"], "note": ""}, {"category": "ワイド", "title": "ヘタリア axis powers", "items": ["6"], "note": ""}, {"category": "ワイド", "title": "つば九郎", "items": ["4以降"], "note": ""}, {"category": "ワイド", "title": "こどものおもちゃ 完全版", "items": ["7"], "note": ""}, {"category": "ワイド", "title": "ホワッツマイケル", "items": ["5", "6", "7", "8"], "note": ""}, {"category": "ワイド", "title": "天使なんかじゃない 完全版", "items": ["1"], "note": ""}, {"category": "文庫漫画", "title": "天上の虹（文庫）", "items": ["7", "8", "9", "11"], "note": ""}, {"category": "文庫漫画", "title": "へうげもの（文庫）", "items": ["8", "9", "10", "11", "12"], "note": ""}, {"category": "文庫漫画", "title": "火の鳥（文庫）", "items": ["8", "10", "11", "12", "13"], "note": ""}, {"category": "文庫漫画", "title": "バナナフィッシュ（文庫）", "items": ["2", "5", "6", "7", "8", "10", "11"], "note": ""}, {"category": "文庫漫画", "title": "あさきゆめみし（文庫）", "items": ["5", "7"], "note": ""}, {"category": "文庫漫画", "title": "ブラックジャック（文庫）", "items": ["3", "5以降"], "note": ""}, {"category": "小説", "title": "シャーロックホームズ（新版）①", "items": ["2", "8", "9"], "note": ""}, {"category": "小説", "title": "シャーロックホームズ（新版）②", "items": ["2以降"], "note": ""}, {"category": "小説", "title": "中二病でも恋がしたい", "items": ["4"], "note": ""}, {"category": "小説", "title": "白銀の壚", "items": ["1"], "note": ""}, {"category": "ハードカバー", "title": "火の鳥（愛蔵版）", "items": ["復活羽衣編", "ギリシャローマ編"], "note": ""}, {"category": "その他", "title": "リラックマ生活シリーズ", "items": ["2", "5", "8", "9", "10", "11", "13", "14"], "note": ""}];
-const STORAGE_KEY = "mangaManagerV1";
-let state = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-const openCards = new Set();
-
-function normalizeStoredItems(items) {
-  const result = [];
-  const add = value => {
-    if (!result.includes(value)) result.push(value);
-  };
-
-  (items || []).forEach(raw => {
-    const s = String(raw).trim();
-
-    let match = s.match(/^(\d+)\s*[-‐‑‒–—−~〜～]\s*$/);
-    if (match) {
-      add(`${match[1]}以降`);
-      return;
-    }
-
-    match = s.match(/^(\d+)\s*[-‐‑‒–—−~〜～]\s*(\d+)$/);
-    if (match) {
-      const start = Number(match[1]);
-      const end = Number(match[2]);
-      if (start <= end && end - start <= 300) {
-        for (let n = start; n <= end; n++) add(String(n));
-        return;
-      }
-    }
-
-    if (/^\d+(?:\s+\d+)+$/.test(s)) {
-      s.split(/\s+/).forEach(add);
-      return;
-    }
-
-    add(s);
-  });
-
-  return result;
-}
-
-if (!state) {
-  state = INITIAL_DATA.map((x, i) => ({...x, id:"seed-"+i, done:{}}));
-} else {
-  state = state.map(x => {
-    const oldItems = x.items || [];
-    const newItems = normalizeStoredItems(oldItems);
-    const newDone = {};
-
-    newItems.forEach(item => {
-      if (x.done && x.done[item]) newDone[item] = true;
-
-      // 以前ひとまとめだった巻数が購入済みの場合も引き継ぐ
-      oldItems.forEach(oldItem => {
-        const oldText = String(oldItem);
-        if (
-          x.done && x.done[oldItem] &&
-          oldText.split(/\s+/).includes(item)
-        ) {
-          newDone[item] = true;
-        }
-      });
-    });
-
-    return {...x, items:newItems, done:newDone};
-  });
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-}
-function save() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  render();
-}
-function esc(s) {
-  return String(s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]));
-}
 function render() {
-  const q = document.getElementById("search").value.trim().toLowerCase();
-  const app = document.getElementById("app");
-  const cats = [...new Set(state.map(x=>x.category))];
-  let html = "", visible = 0;
-  cats.forEach(cat => {
-    const rows = state.filter(x => x.category===cat && (!q || (x.title+" "+x.note+" "+x.items.join(" ")).toLowerCase().includes(q)));
-    if (!rows.length) return;
-    html += `<h2 class="category">${esc(cat)}</h2>`;
-    rows.forEach(x => {
-      visible++;
-      const doneN = x.items.filter(it=>x.done && x.done[it]).length;
-      html += `<article class="card ${openCards.has(x.id) ? "open" : ""}" data-id="${esc(x.id)}">
-        <div class="titleRow" onclick="toggleCard('${esc(x.id)}')">
-          <div class="titleText">${esc(x.title)}</div>
-          <div class="count">${doneN} / ${x.items.length} 購入済み</div>
-        </div>
-        <div class="details">
-          ${x.note ? `<div class="note">${esc(x.note)}</div>` : ""}
-          <div class="items">
-            ${x.items.length ? x.items.map(it=>`<button class="item ${x.done && x.done[it] ? "done":""}" onclick="event.stopPropagation();toggleItem('${esc(x.id)}','${encodeURIComponent(it)}')">${x.done && x.done[it] ? "✓ " : ""}${esc(it)}</button>`).join("") : `<span class="muted">欠品巻の登録なし（メモのみ）</span>`}
-          </div>
-          <div class="smallActions">
-            <button class="ghost" onclick="event.stopPropagation();addItem('${esc(x.id)}')">欠品を追加</button>
-            <button class="ghost" onclick="event.stopPropagation();deleteTitle('${esc(x.id)}')">作品を削除</button>
-          </div>
-        </div>
-      </article>`;
-    });
-  });
-  app.innerHTML = html || `<div class="empty">該当する作品がありません</div>`;
+  renderFilters();
+  const q = search.value.trim();
+  const data = allData();
+  let html = "";
+  let titles = 0, targets = 0, done = 0;
 
-  const allItems = state.flatMap(x=>x.items);
-  const allDone = state.reduce((n,x)=>n+x.items.filter(it=>x.done && x.done[it]).length,0);
-  document.getElementById("workCount").textContent = `作品 ${state.length}件`;
-  document.getElementById("itemCount").textContent = `欠品項目 ${allItems.length}件`;
-  document.getElementById("doneCount").textContent = `購入済み ${allDone}件`;
-}
-window.toggleCard = function(id) {
-  if (openCards.has(id)) {
-    openCards.delete(id);
-  } else {
-    openCards.add(id);
+  for (const cat of data) {
+    if (activeCategory !== "すべて" && activeCategory !== cat.category) continue;
+    const items = cat.items.filter(i=>itemMatches(i,q));
+    if (!items.length) continue;
+    html += `<div class="category-title">${cat.category}</div>`;
+    for (const item of items) {
+      titles++;
+      const cardId = btoa(unescape(encodeURIComponent(cat.category+"|"+item.title))).replace(/=/g,"");
+      html += `<section class="card" id="card-${cardId}">
+        <div class="card-head"><span class="chev">▶</span><strong>${item.title}</strong></div>
+        <div class="card-body">`;
+      item.groups.forEach((g,gi)=>{
+        html += `<div class="group"><div class="group-label">${g.label}</div>`;
+        if (g.mode === "note") {
+          html += g.values.map(v=>`<div class="note">${v}</div>`).join("");
+        } else if (g.mode === "wanted_count") {
+          html += g.values.map((v,vi)=>{
+            const k = keyFor(cat.category,item.title,gi,vi);
+            const val = Math.min(Number(state[k]||0),v.need);
+            targets += v.need; done += val;
+            const boxes = Array.from({length:v.need},(_,i)=>`<span class="counter-box ${i<val?"on":""}"></span>`).join("");
+            return `<div class="counter-row tap-counter" data-key="${k}" data-need="${v.need}">
+              <span class="counter-name">${v.name}</span><span class="counter-boxes">${boxes}</span><b>${val}/${v.need}</b>
+            </div>`;
+          }).join("");
+        } else {
+          html += `<div class="chips">` + g.values.map((v,vi)=>{
+            const k = keyFor(cat.category,item.title,gi,vi);
+            const isDone = !!state[k];
+            if (g.mode !== "stock" || true) { targets++; if(isDone) done++; }
+            const cls = ["chip",g.mode,isDone?"done":""].join(" ");
+            return `<button class="${cls}" data-key="${k}">${v}</button>`;
+          }).join("") + `</div>`;
+        }
+        html += `</div>`;
+      });
+      html += `</div></section>`;
+    }
   }
-  const card = document.querySelector(`.card[data-id="${CSS.escape(id)}"]`);
-  if (card) card.classList.toggle("open", openCards.has(id));
-}
-window.toggleItem = function(id, encoded) {
-  const it = decodeURIComponent(encoded);
-  const x = state.find(v=>v.id===id);
-  x.done = x.done || {};
-  x.done[it] = !x.done[it];
-  save();
-}
-window.addItem = function(id) {
-  const value = prompt("追加する欠品巻・項目を入力してください");
-  if (!value) return;
-  const x = state.find(v=>v.id===id);
-  value.split(/[、,]/).map(s=>s.trim()).filter(Boolean).forEach(v=>{
-    if(!x.items.includes(v)) x.items.push(v);
+  if (!html) html = `<div class="empty">該当する作品がありません</div>`;
+  app.innerHTML = html;
+  document.getElementById("titleCount").textContent = titles;
+  document.getElementById("targetCount").textContent = targets;
+  document.getElementById("doneCount").textContent = done;
+
+  app.querySelectorAll(".card-head").forEach(h=>h.onclick=()=>h.parentElement.classList.toggle("open"));
+  app.querySelectorAll(".chip").forEach(ch=>ch.onclick=(e)=>{
+    e.stopPropagation();
+    state[ch.dataset.key] = !state[ch.dataset.key];
+    saveState();
+    ch.classList.toggle("done", !!state[ch.dataset.key]);
+    updateStatsOnly();
   });
-  save();
+  app.querySelectorAll(".tap-counter").forEach(row=>row.onclick=(e)=>{
+    e.stopPropagation();
+    const k=row.dataset.key, need=Number(row.dataset.need);
+    let val=Number(state[k]||0);
+    state[k] = val >= need ? 0 : val+1;
+    saveState();
+    const openCards=[...app.querySelectorAll(".card.open")].map(x=>x.id);
+    render();
+    openCards.forEach(id=>document.getElementById(id)?.classList.add("open"));
+  });
 }
-window.deleteTitle = function(id) {
-  const x = state.find(v=>v.id===id);
-  if (confirm(`「${x.title}」を削除しますか？`)) {
-    state = state.filter(v=>v.id!==id);
-    save();
+
+function updateStatsOnly() {
+  let total=0, done=0;
+  for (const cat of allData()) for (const item of cat.items) for (let gi=0;gi<item.groups.length;gi++) {
+    const g=item.groups[gi];
+    if(g.mode==="note") continue;
+    if(g.mode==="wanted_count") {
+      g.values.forEach((v,vi)=>{total+=v.need; done+=Math.min(Number(state[keyFor(cat.category,item.title,gi,vi)]||0),v.need);});
+    } else {
+      g.values.forEach((v,vi)=>{total++; if(state[keyFor(cat.category,item.title,gi,vi)]) done++;});
+    }
   }
+  document.getElementById("doneCount").textContent=done;
 }
-document.getElementById("search").addEventListener("input", render);
-document.getElementById("clearSearch").onclick = () => {
-  document.getElementById("search").value="";
+
+search.addEventListener("input",render);
+document.getElementById("clearSearch").onclick=()=>{search.value="";render();search.focus();};
+document.getElementById("closeAll").onclick=()=>app.querySelectorAll(".card").forEach(c=>c.classList.remove("open"));
+
+const modal=document.getElementById("modal");
+document.getElementById("addTitle").onclick=()=>modal.classList.add("show");
+document.getElementById("cancelAdd").onclick=()=>modal.classList.remove("show");
+document.getElementById("newCategory").innerHTML = allData().map(x=>`<option>${x.category}</option>`).join("");
+document.getElementById("saveAdd").onclick=()=>{
+  const category=document.getElementById("newCategory").value;
+  const title=document.getElementById("newTitle").value.trim();
+  const values=document.getElementById("newValues").value.split(/[,、\n]/).map(x=>x.trim()).filter(Boolean);
+  const mode=document.getElementById("newMode").value;
+  if(!title||!values.length){alert("作品名と内容を入力してください");return;}
+  custom.push({category,item:{title,groups:[{label:mode==="stock"?"在庫あり":mode==="note"?"メモ":mode==="special"?"特殊条件":"不足",mode,values}]}});
+  saveCustom();
+  document.getElementById("newTitle").value="";
+  document.getElementById("newValues").value="";
+  modal.classList.remove("show");
   render();
 };
-document.getElementById("addTitle").onclick = () => {
-  const category = document.getElementById("newCategory").value;
-  const title = document.getElementById("newTitle").value.trim();
-  const items = document.getElementById("newItems").value.split(/[、,]/).map(s=>s.trim()).filter(Boolean);
-  const note = document.getElementById("newNote").value.trim();
-  if(!title) return alert("作品名を入力してください");
-  state.push({category,title,items,note,id:"user-"+Date.now(),done:{}});
-  ["newTitle","newItems","newNote"].forEach(id=>document.getElementById(id).value="");
-  save();
-};
+
+setTimeout(()=>document.getElementById("splash").classList.add("hide"),900);
+setTimeout(()=>document.getElementById("splash").remove(),1500);
 render();
 </script>
 </body>
