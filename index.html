@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#080808">
-<title>漫画仕入れ管理 Pro 2.0</title>
+<title>漫画仕入れ管理 Pro 2.1</title>
 <style>
 :root {
   --bg:#090909; --panel:#161616; --panel2:#202020; --line:#343434;
@@ -61,7 +61,7 @@ main{padding:0 12px 90px;max-width:900px;margin:auto}
 .counter-box.on{background:var(--green);border-color:var(--green)}
 .empty{text-align:center;color:#999;padding:50px 20px}
 footer{position:fixed;bottom:0;left:0;right:0;background:rgba(8,8,8,.96);border-top:1px solid #292929;padding:10px 12px calc(10px + env(safe-area-inset-bottom));z-index:11}
-.footer-inner{max-width:900px;margin:auto;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.footer-inner{max-width:900px;margin:auto;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .footer-btn{border:1px solid #444;background:#1a1a1a;color:#eee;border-radius:13px;padding:12px}
 .footer-btn.primary{background:var(--gold);color:#111;border-color:var(--gold);font-weight:800}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:60;display:none;align-items:flex-end}
@@ -75,6 +75,29 @@ footer{position:fixed;bottom:0;left:0;right:0;background:rgba(8,8,8,.96);border-
 .actions button{flex:1;border:0;border-radius:12px;padding:12px}
 .save{background:var(--gold);font-weight:800} .cancel{background:#333;color:white}
 @media(min-width:700px){.card-head strong{font-size:17px}}
+
+.calc-grid{display:grid;grid-template-columns:1.3fr auto auto 1fr;gap:8px;align-items:center;margin-bottom:9px}
+.calc-grid .price-label{font-weight:800;color:#f4e7b0}
+.calc-grid button{border:1px solid #4a4a4a;background:#292929;color:#fff;border-radius:10px;padding:10px 12px;font-weight:900}
+.calc-grid .qty{min-width:48px;text-align:center;font-weight:900;color:var(--gold)}
+.calc-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.calc-summary{background:#0f0f0f;border:1px solid #3b3b3b;border-radius:14px;padding:13px;margin:14px 0}
+.calc-summary div{display:flex;justify-content:space-between;gap:12px;padding:5px 0}
+.calc-summary b{color:var(--gold)}
+.judgement{border-radius:16px;padding:18px;text-align:center;margin-top:12px;border:2px solid #555}
+.judgement .go{font-size:34px;font-weight:1000;letter-spacing:.05em}
+.judgement .rank{font-size:20px;margin:5px 0}
+.judgement .message{font-weight:800}
+.judgement.green{background:#102d1d;border-color:#28c76f}
+.judgement.blue{background:#12253b;border-color:#62a8ff}
+.judgement.yellow{background:#332b0e;border-color:#f5c84c}
+.judgement.red{background:#351313;border-color:#ff5d5d}
+.calc-note{font-size:12px;color:#aaa;line-height:1.6;margin-top:8px}
+@media(max-width:480px){
+  .footer-inner{grid-template-columns:1fr 1fr 1fr}
+  .footer-btn{padding:11px 6px;font-size:13px}
+}
+
 </style>
 </head>
 <body>
@@ -82,7 +105,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:rgba(8,8,8,.96);border-
 
 <header>
   <div class="topline">
-    <h1>漫画仕入れ管理 Pro 2.0</h1>
+    <h1>漫画仕入れ管理 Pro 2.1</h1>
     <span class="badge">自動保存</span>
   </div>
   <div class="search">
@@ -103,6 +126,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:rgba(8,8,8,.96);border-
 <footer>
   <div class="footer-inner">
     <button class="footer-btn" id="closeAll">すべて閉じる</button>
+    <button class="footer-btn" id="openCalc">🧮 仕入れ計算</button>
     <button class="footer-btn primary" id="addTitle">＋ 作品追加</button>
   </div>
 </footer>
@@ -117,6 +141,76 @@ footer{position:fixed;bottom:0;left:0;right:0;background:rgba(8,8,8,.96);border-
       <option value="missing">不足</option><option value="stock">在庫あり</option><option value="special">特殊条件</option><option value="note">メモ</option>
     </select></div>
     <div class="actions"><button class="cancel" id="cancelAdd">キャンセル</button><button class="save" id="saveAdd">保存</button></div>
+  </div>
+</div>
+
+
+<div class="modal" id="calcModal">
+  <div class="sheet">
+    <h2>🧮 仕入れ計算</h2>
+
+    <div class="calc-grid" data-price="110">
+      <div class="price-label">110円</div>
+      <button type="button" class="qty-minus">−</button>
+      <div class="qty">0冊</div>
+      <button type="button" class="qty-plus">＋</button>
+    </div>
+    <div class="calc-grid" data-price="132">
+      <div class="price-label">132円</div>
+      <button type="button" class="qty-minus">−</button>
+      <div class="qty">0冊</div>
+      <button type="button" class="qty-plus">＋</button>
+    </div>
+    <div class="calc-grid" data-price="165">
+      <div class="price-label">165円</div>
+      <button type="button" class="qty-minus">−</button>
+      <div class="qty">0冊</div>
+      <button type="button" class="qty-plus">＋</button>
+    </div>
+    <div class="calc-grid" data-price="220">
+      <div class="price-label">220円</div>
+      <button type="button" class="qty-minus">−</button>
+      <div class="qty">0冊</div>
+      <button type="button" class="qty-plus">＋</button>
+    </div>
+
+    <div class="calc-row">
+      <div class="field"><label>その他の単価</label><input id="otherPrice" inputmode="numeric" type="number" min="0" placeholder="例：330"></div>
+      <div class="field"><label>その他の冊数</label><input id="otherQty" inputmode="numeric" type="number" min="0" placeholder="0"></div>
+    </div>
+
+    <div class="field"><label>販売価格</label><input id="salePrice" inputmode="numeric" type="number" min="0" placeholder="例：5980"></div>
+
+    <div class="calc-row">
+      <div class="field"><label>販売手数料</label>
+        <select id="feeRate">
+          <option value="10">メルカリ 10%</option>
+          <option value="6">ラクマ 6%</option>
+          <option value="5">Yahoo!フリマ 5%</option>
+          <option value="0">手数料なし</option>
+        </select>
+      </div>
+      <div class="field"><label>送料</label><input id="shipping" inputmode="numeric" type="number" min="0" placeholder="例：750"></div>
+    </div>
+
+    <div class="calc-summary">
+      <div><span>仕入れ合計</span><b id="purchaseTotal">0円</b></div>
+      <div><span>販売手数料</span><b id="feeAmount">0円</b></div>
+      <div><span>利益</span><b id="profitAmount">0円</b></div>
+      <div><span>利益率</span><b id="profitRate">0.0%</b></div>
+    </div>
+
+    <div id="judgement" class="judgement red">
+      <div class="go">🔴 PASS</div>
+      <div class="rank">★☆☆☆☆</div>
+      <div class="message">販売価格などを入力してください</div>
+    </div>
+    <div class="calc-note">判定基準：3,000円以上＝積極仕入れ／1,500〜2,999円＝とても良い／700〜1,499円＝仕入れOK／700円未満＝基本見送り</div>
+
+    <div class="actions" style="margin-top:14px">
+      <button class="cancel" id="resetCalc">リセット</button>
+      <button class="save" id="closeCalc">閉じる</button>
+    </div>
   </div>
 </div>
 
@@ -263,6 +357,87 @@ document.getElementById("saveAdd").onclick=()=>{
   document.getElementById("newValues").value="";
   modal.classList.remove("show");
   render();
+};
+
+
+const calcModal = document.getElementById("calcModal");
+const calcRows = [...document.querySelectorAll("#calcModal .calc-grid")];
+
+function yen(n){ return Math.round(n || 0).toLocaleString("ja-JP") + "円"; }
+
+function calcPurchaseTotal(){
+  let total = 0;
+  calcRows.forEach(row=>{
+    const price = Number(row.dataset.price);
+    const qty = Number(row.dataset.qty || 0);
+    total += price * qty;
+  });
+  total += Number(document.getElementById("otherPrice").value || 0) * Number(document.getElementById("otherQty").value || 0);
+  return total;
+}
+
+function updateCalculator(){
+  const purchase = calcPurchaseTotal();
+  const sale = Number(document.getElementById("salePrice").value || 0);
+  const feeRate = Number(document.getElementById("feeRate").value || 0);
+  const shipping = Number(document.getElementById("shipping").value || 0);
+  const fee = Math.floor(sale * feeRate / 100);
+  const profit = sale - fee - shipping - purchase;
+  const rate = sale > 0 ? (profit / sale) * 100 : 0;
+
+  document.getElementById("purchaseTotal").textContent = yen(purchase);
+  document.getElementById("feeAmount").textContent = yen(fee);
+  document.getElementById("profitAmount").textContent = yen(profit);
+  document.getElementById("profitRate").textContent = rate.toFixed(1) + "%";
+
+  const j = document.getElementById("judgement");
+  let color = "red", go = "🔴 PASS", rank = "★☆☆☆☆", message = "基本見送り";
+  if (profit >= 3000) {
+    color = "green"; go = "🟢 GO！"; rank = "★★★★★"; message = "積極的に仕入れ";
+  } else if (profit >= 1500) {
+    color = "blue"; go = "🔵 GO！"; rank = "★★★★☆"; message = "とても良い";
+  } else if (profit >= 700) {
+    color = "yellow"; go = "🟡 GO"; rank = "★★★☆☆"; message = "仕入れOK";
+  } else if (sale <= 0) {
+    message = "販売価格などを入力してください";
+  }
+  j.className = "judgement " + color;
+  j.innerHTML = `<div class="go">${go}</div><div class="rank">${rank}</div><div class="message">${message}</div>`;
+}
+
+calcRows.forEach(row=>{
+  row.dataset.qty = "0";
+  const qtyEl = row.querySelector(".qty");
+  row.querySelector(".qty-plus").onclick = ()=>{
+    row.dataset.qty = String(Number(row.dataset.qty || 0) + 1);
+    qtyEl.textContent = row.dataset.qty + "冊";
+    updateCalculator();
+  };
+  row.querySelector(".qty-minus").onclick = ()=>{
+    row.dataset.qty = String(Math.max(0, Number(row.dataset.qty || 0) - 1));
+    qtyEl.textContent = row.dataset.qty + "冊";
+    updateCalculator();
+  };
+});
+
+["otherPrice","otherQty","salePrice","feeRate","shipping"].forEach(id=>{
+  document.getElementById(id).addEventListener("input", updateCalculator);
+  document.getElementById(id).addEventListener("change", updateCalculator);
+});
+
+document.getElementById("openCalc").onclick = ()=>{
+  calcModal.classList.add("show");
+  updateCalculator();
+};
+document.getElementById("closeCalc").onclick = ()=>calcModal.classList.remove("show");
+document.getElementById("resetCalc").onclick = ()=>{
+  calcRows.forEach(row=>{
+    row.dataset.qty = "0";
+    row.querySelector(".qty").textContent = "0冊";
+  });
+  ["otherPrice","otherQty","salePrice","shipping"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("feeRate").value="10";
+  updateCalculator();
 };
 
 setTimeout(()=>document.getElementById("splash").classList.add("hide"),900);
