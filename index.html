@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#080808">
-<title>漫画仕入れ管理 Pro 2.1</title>
+<title>漫画仕入れ管理 Pro 2.5</title>
 <style>
 :root {
   --bg:#090909; --panel:#161616; --panel2:#202020; --line:#343434;
@@ -98,6 +98,185 @@ footer{position:fixed;bottom:0;left:0;right:0;background:rgba(8,8,8,.96);border-
   .footer-btn{padding:11px 6px;font-size:13px}
 }
 
+
+/* Ver.2.2 現場向けタッチ操作調整 */
+#calcModal button,
+#calcModal input,
+#calcModal select{
+  touch-action:manipulation;
+}
+.calc-grid{
+  display:grid;
+  grid-template-columns:minmax(92px,1.25fr) 58px 68px 58px;
+  gap:10px;
+  align-items:center;
+  margin-bottom:12px;
+}
+.calc-grid .price-label,
+.calc-grid .price-input{
+  min-height:56px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:900;
+  font-size:19px;
+  border-radius:12px;
+}
+.calc-grid .price-label{
+  color:#f4e7b0;
+  background:#222;
+  border:1px solid #444;
+}
+.calc-grid .price-input{
+  width:100%;
+  background:#0f0f0f;
+  color:#fff;
+  border:1px solid #555;
+  text-align:center;
+  padding:8px;
+}
+.calc-grid button{
+  min-width:58px;
+  min-height:58px;
+  border:1px solid #555;
+  background:#2c2c2c;
+  color:#fff;
+  border-radius:14px;
+  padding:0;
+  font-size:30px;
+  line-height:1;
+  font-weight:1000;
+  user-select:none;
+  -webkit-user-select:none;
+}
+.calc-grid button:active{
+  transform:scale(.96);
+  background:#3a3a3a;
+}
+.calc-grid .qty{
+  min-width:68px;
+  min-height:58px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  font-size:18px;
+  font-weight:1000;
+  color:var(--gold);
+  background:#111;
+  border:1px solid #444;
+  border-radius:12px;
+}
+.required-input{
+  border:2px solid var(--red)!important;
+  background:#351313!important;
+  color:#fff!important;
+}
+.required-input.filled{
+  border:1px solid #444!important;
+  background:#0f0f0f!important;
+}
+@media(max-width:390px){
+  .calc-grid{
+    grid-template-columns:minmax(82px,1.1fr) 54px 64px 54px;
+    gap:7px;
+  }
+  .calc-grid button{min-width:54px;min-height:58px}
+  .calc-grid .qty{min-width:64px}
+}
+
+
+.purchased-stat{
+  width:100%;
+  color:inherit;
+  font:inherit;
+  cursor:pointer;
+  touch-action:manipulation;
+}
+.purchased-stat:active{
+  transform:scale(.98);
+}
+.purchased-stat b::after{
+  content:" ▶";
+  font-size:12px;
+}
+.purchased-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.purchased-item{
+  background:#202020;
+  border:1px solid #373737;
+  border-radius:13px;
+  padding:12px;
+}
+.purchased-item .p-title{
+  font-weight:900;
+  margin-bottom:5px;
+}
+.purchased-item .p-meta{
+  color:#bbb;
+  font-size:13px;
+  line-height:1.5;
+}
+.purchased-empty{
+  text-align:center;
+  color:#999;
+  padding:30px 10px;
+}
+
+
+.purchased-link{
+  border:0;
+  background:transparent;
+  color:var(--muted);
+  font-size:11px;
+  padding:3px 6px;
+  border-radius:8px;
+  cursor:pointer;
+  touch-action:manipulation;
+  text-decoration:underline;
+  text-underline-offset:3px;
+}
+.purchased-link:active{
+  background:#2b2b2b;
+}
+.purchased-item{
+  display:grid;
+  grid-template-columns:12px 1fr;
+  gap:9px;
+  align-items:start;
+}
+.purchased-dot{
+  width:10px;
+  height:10px;
+  margin-top:5px;
+  border-radius:50%;
+  background:var(--green);
+  box-shadow:0 0 8px rgba(40,199,111,.45);
+}
+.purchased-time{
+  margin-top:5px;
+  color:#8f8f8f;
+  font-size:12px;
+}
+
+
+.stat-button{width:100%;cursor:pointer}
+.stat-button.active{background:#12351f;border-color:var(--green);box-shadow:0 0 0 1px var(--green) inset}
+.stat-button.active b,.stat-button.active span{color:#8ff0b3}
+.purchased-guide{background:#12351f;border:1px solid #286d43;border-radius:14px;padding:12px 14px;margin:12px 0;color:#b9f6ce}
+.purchased-guide strong{font-size:14px}
+.confirm-modal{align-items:center;padding:20px}
+.confirm-box{background:#191919;width:min(100%,420px);border:1px solid #444;border-radius:20px;padding:20px;box-shadow:0 18px 60px rgba(0,0,0,.65)}
+.confirm-box h2{margin:0 0 10px;color:var(--gold);font-size:20px}
+.confirm-box p{margin:0 0 18px;color:#eee;line-height:1.6}
+.confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.confirm-actions button{border:0;border-radius:13px;padding:14px 10px;font-weight:800}
+.confirm-back{background:#333;color:#fff}
+.confirm-remove{background:var(--red);color:#190303}
+
 </style>
 </head>
 <body>
@@ -105,7 +284,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:rgba(8,8,8,.96);border-
 
 <header>
   <div class="topline">
-    <h1>漫画仕入れ管理 Pro 2.1</h1>
+    <h1>漫画仕入れ管理 Pro 2.5</h1>
     <span class="badge">自動保存</span>
   </div>
   <div class="search">
@@ -117,7 +296,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:rgba(8,8,8,.96);border-
 <section class="stats">
   <div class="stat"><b id="titleCount">0</b><span>作品数</span></div>
   <div class="stat"><b id="targetCount">0</b><span>対象数</span></div>
-  <div class="stat"><b id="doneCount">0</b><span>購入済み</span></div>
+  <button class="stat stat-button" id="purchasedView" type="button" aria-pressed="false"><b id="doneCount">0</b><span>購入済み</span></button>
 </section>
 
 <div class="filters" id="filters"></div>
@@ -161,17 +340,17 @@ footer{position:fixed;bottom:0;left:0;right:0;background:rgba(8,8,8,.96);border-
       <div class="qty">0冊</div>
       <button type="button" class="qty-plus">＋</button>
     </div>
-    <div class="calc-grid" data-price="165">
-      <div class="price-label">165円</div>
-      <button type="button" class="qty-minus">−</button>
+    <div class="calc-grid" data-price="0">
+      <input class="price-input custom-row-price" inputmode="numeric" type="number" min="0" placeholder="価格">
+      <button type="button" class="qty-minus" aria-label="冊数を減らす">−</button>
       <div class="qty">0冊</div>
-      <button type="button" class="qty-plus">＋</button>
+      <button type="button" class="qty-plus" aria-label="冊数を増やす">＋</button>
     </div>
-    <div class="calc-grid" data-price="220">
-      <div class="price-label">220円</div>
-      <button type="button" class="qty-minus">−</button>
+    <div class="calc-grid" data-price="0">
+      <input class="price-input custom-row-price" inputmode="numeric" type="number" min="0" placeholder="価格">
+      <button type="button" class="qty-minus" aria-label="冊数を減らす">−</button>
       <div class="qty">0冊</div>
-      <button type="button" class="qty-plus">＋</button>
+      <button type="button" class="qty-plus" aria-label="冊数を増やす">＋</button>
     </div>
 
     <div class="calc-row">
@@ -179,7 +358,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:rgba(8,8,8,.96);border-
       <div class="field"><label>その他の冊数</label><input id="otherQty" inputmode="numeric" type="number" min="0" placeholder="0"></div>
     </div>
 
-    <div class="field"><label>販売価格</label><input id="salePrice" inputmode="numeric" type="number" min="0" placeholder="例：5980"></div>
+    <div class="field"><label>販売価格</label><input id="salePrice" class="required-input" inputmode="numeric" type="number" min="0" placeholder="必須：例 5980"></div>
 
     <div class="calc-row">
       <div class="field"><label>販売手数料</label>
@@ -190,7 +369,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:rgba(8,8,8,.96);border-
           <option value="0">手数料なし</option>
         </select>
       </div>
-      <div class="field"><label>送料</label><input id="shipping" inputmode="numeric" type="number" min="0" placeholder="例：750"></div>
+      <div class="field"><label>送料</label><input id="shipping" class="required-input" inputmode="numeric" type="number" min="0" placeholder="必須：例 750"></div>
     </div>
 
     <div class="calc-summary">
@@ -214,6 +393,20 @@ footer{position:fixed;bottom:0;left:0;right:0;background:rgba(8,8,8,.96);border-
   </div>
 </div>
 
+
+
+
+<div class="modal confirm-modal" id="purchaseCancelModal" role="dialog" aria-modal="true" aria-labelledby="purchaseCancelTitle">
+  <div class="confirm-box">
+    <h2 id="purchaseCancelTitle">購入済みを取り消しますか？</h2>
+    <p id="purchaseCancelMessage"></p>
+    <div class="confirm-actions">
+      <button class="confirm-back" id="keepPurchased" type="button">戻る</button>
+      <button class="confirm-remove" id="confirmPurchaseCancel" type="button">取り消す</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const MASTER = [{"category": "少年コミック", "items": [{"title": "ハンターハンター", "groups": [{"label": "① 在庫あり", "mode": "stock", "values": ["19", "31", "32"]}]}, {"title": "ブラックジャック", "groups": [{"label": "不足", "mode": "missing", "values": ["1", "3", "17", "19", "23", "25"]}]}, {"title": "ボボボーボ", "groups": [{"label": "① 不足", "mode": "missing", "values": ["17", "19", "21"]}, {"label": "② 在庫あり", "mode": "stock", "values": ["18"]}]}, {"title": "ボボボー新説", "groups": [{"label": "不足", "mode": "missing", "values": ["4", "5"]}]}, {"title": "ゲゲゲの鬼太郎 妖怪千物語", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["2", "3"]}]}, {"title": "ゲゲゲの鬼太郎 新妖怪千物語", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["1"]}]}, {"title": "ナルト", "groups": [{"label": "① 在庫あり", "mode": "stock", "values": ["臨兵闘者皆列在忍", "疾風絵巻", "十年百忍"]}, {"label": "② 在庫あり", "mode": "stock", "values": ["列在 2セット"]}]}, {"title": "デスノート", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["5", "13"]}]}, {"title": "ブリーチ", "groups": [{"label": "欲しい物", "mode": "wanted_count", "values": [{"name": "Souls", "need": 3}, {"name": "アンマスクト", "need": 2}, {"name": "マスクト", "need": 1}]}]}, {"title": "ケロロ軍曹", "groups": [{"label": "不足", "mode": "missing", "values": ["27", "29", "30", "31", "32", "33", "34", "35"]}, {"label": "在庫あり", "mode": "stock", "values": ["緑", "赤"]}]}, {"title": "暗殺教室", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["A", "B"]}]}, {"title": "ドラゴンクエストモンスターズプラス 旧版", "groups": [{"label": "不足", "mode": "missing", "values": ["3"]}]}, {"title": "学園トリコ", "groups": [{"label": "不足", "mode": "missing", "values": ["8", "9"]}]}, {"title": "ドラゴンボール", "groups": [{"label": "① 初版不足", "mode": "missing", "values": ["1", "2"]}, {"label": "② 不足", "mode": "missing", "values": ["3", "6", "16", "24", "39"]}, {"label": "③ 在庫あり", "mode": "stock", "values": ["7", "18", "29", "37", "40", "42"]}]}, {"title": "ポケットモンスター（アニメ版）", "groups": [{"label": "不足", "mode": "missing", "values": ["1", "6", "8", "9", "15", "17", "18", "19", "20"]}]}, {"title": "ポケットモンスター（フィルム）金銀編", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["14", "16", "24"]}]}, {"title": "ポケモンゲットだぜ", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["2", "3", "4"]}]}, {"title": "テニスの王子様", "groups": [{"label": "不足", "mode": "missing", "values": ["青10.5", "40.5"]}]}, {"title": "ドラえもん大長編", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["1", "2", "3", "6", "7", "8", "9", "21"]}]}]}, {"category": "青年コミック", "items": [{"title": "ベルセルク", "groups": [{"label": "不足", "mode": "missing", "values": ["2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "26", "31", "33", "34", "35", "39", "43"]}]}, {"title": "ゴーストアンドレディ", "groups": [{"label": "不足", "mode": "missing", "values": ["上"]}]}, {"title": "頭文字D", "groups": [{"label": "① 不足", "mode": "missing", "values": ["45", "46", "47"]}, {"label": "② 不足", "mode": "missing", "values": ["39", "41", "44", "45", "46", "47"]}, {"label": "メモ", "mode": "note", "values": ["43巻オレンジ以降は買い"]}]}, {"title": "バイオハザード ヘヴンリー", "groups": [{"label": "不足", "mode": "missing", "values": ["1", "2", "3"]}]}, {"title": "プラネテス", "groups": [{"label": "不足", "mode": "missing", "values": ["4"]}]}, {"title": "ジブリ", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["千と千尋 3セット", "トトロ 1セット", "もののけ 1セット", "ハウル 1セット", "ゲド戦記 1セット", "ポニョ 1セット", "アリエッティ 1セット", "メアリ 1セット", "火垂るの墓 1セット", "猫の恩返し 1セット"]}]}, {"title": "宇宙兄弟", "groups": [{"label": "① 不足", "mode": "special", "values": ["26巻以降"]}, {"label": "② 不足", "mode": "special", "values": ["21巻以外"]}]}, {"title": "三日月よ怪物と踊れ", "groups": [{"label": "不足", "mode": "special", "values": ["2巻以外"]}]}, {"title": "アルパインクライマー", "groups": [{"label": "不足", "mode": "missing", "values": ["7"]}]}, {"title": "コードギアス 双貌のオズO2", "groups": [{"label": "不足", "mode": "missing", "values": [".5巻"]}]}, {"title": "ペルソナ4", "groups": [{"label": "不足", "mode": "missing", "values": ["13"]}]}, {"title": "にゃんこ大戦争", "groups": [{"label": "不足", "mode": "special", "values": ["2", "4〜8", "10〜"]}]}, {"title": "ねこねこ日本史", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["1", "3", "外伝1", "外伝2"]}]}, {"title": "英語ドラえもん", "groups": [{"label": "不足", "mode": "special", "values": ["4〜6", "8〜"]}]}]}, {"category": "少女コミック", "items": [{"title": "動物のお医者さん", "groups": [{"label": "不足", "mode": "missing", "values": ["1"]}]}, {"title": "なまいきざかり", "groups": [{"label": "不足", "mode": "missing", "values": ["20", "21", "22", "23"]}]}, {"title": "セーラームーン", "groups": [{"label": "不足", "mode": "missing", "values": ["14", "15"]}]}, {"title": "セーラームーン 新装版", "groups": [{"label": "不足", "mode": "missing", "values": ["6", "10", "11"]}]}, {"title": "セーラームーン（フィルム）", "groups": [{"label": "不足", "mode": "special", "values": ["6〜"]}]}, {"title": "東京ミュウミュウ 新装版", "groups": [{"label": "不足", "mode": "missing", "values": ["3", "8", "9", "10"]}]}, {"title": "神様はじめました", "groups": [{"label": "① 不足", "mode": "missing", "values": ["23", "24"]}, {"label": "② 不足", "mode": "special", "values": ["16巻以外"]}]}, {"title": "ちびまる子", "groups": [{"label": "① 不足", "mode": "missing", "values": ["1", "7", "11", "13", "14", "16", "17", "18"]}]}]}, {"category": "女性コミック", "items": [{"title": "凪のお暇", "groups": [{"label": "不足", "mode": "missing", "values": ["12"]}]}]}, {"category": "ワイド", "items": [{"title": "つば九郎", "groups": [{"label": "不足", "mode": "special", "values": ["5〜"]}]}, {"title": "こどものおもちゃ 完全版", "groups": [{"label": "不足", "mode": "missing", "values": ["7"]}]}, {"title": "ホワッツマイケル", "groups": [{"label": "不足", "mode": "missing", "values": ["6", "7", "8"]}]}, {"title": "パラダイスキス", "groups": [{"label": "必要冊数", "mode": "wanted_count", "values": [{"name": "4巻", "need": 3}, {"name": "5巻", "need": 2}]}]}]}, {"category": "文庫漫画", "items": [{"title": "火の鳥（文庫）", "groups": [{"label": "① 不足", "mode": "missing", "values": ["8", "10", "11"]}, {"label": "② 不足", "mode": "missing", "values": ["8", "10", "11"]}]}, {"title": "バナナフィッシュ（文庫）", "groups": [{"label": "不足", "mode": "missing", "values": ["7", "10", "11"]}]}, {"title": "怪盗ジャンヌ（文庫）", "groups": [{"label": "不足", "mode": "missing", "values": ["5"]}]}, {"title": "あさきゆめみし（文庫）", "groups": [{"label": "不足", "mode": "missing", "values": ["5", "7"]}]}, {"title": "ブラックジャック（文庫）", "groups": [{"label": "不足", "mode": "missing", "values": ["17"]}]}, {"title": "デスノート（文庫）", "groups": [{"label": "不足", "mode": "special", "values": ["2〜"]}]}, {"title": "日出処の天子", "groups": [{"label": "不足", "mode": "missing", "values": ["5"]}]}, {"title": "有閑倶楽部（文庫）", "groups": [{"label": "不足", "mode": "missing", "values": ["10"]}]}, {"title": "ブッダ（文庫）", "groups": [{"label": "① 不足", "mode": "missing", "values": ["9", "10", "11", "13"]}, {"label": "② 不足", "mode": "missing", "values": ["1", "6", "7", "8", "9", "10", "11", "12", "13"]}]}]}, {"category": "小説", "items": [{"title": "シャーロックホームズ（新版）", "groups": [{"label": "① 不足", "mode": "missing", "values": ["7", "10"]}]}, {"title": "中二病でも恋がしたい", "groups": [{"label": "不足", "mode": "missing", "values": ["4"]}]}, {"title": "涼宮ハルヒ", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["1〜11"]}]}, {"title": "小野不由美（十二国記）", "groups": [{"label": "目印", "mode": "note", "values": ["紺色カバーで花のようなライン／青い背表紙シリーズ"]}, {"label": "不足", "mode": "missing", "values": ["風の万里 黎明の空 下", "華胥の幽夢", "黄昏の岸 暁の天 下巻（白背表紙）"]}]}]}, {"category": "児童書", "items": [{"title": "ドラえもん科学シリーズ", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["ロボット世界", "未来のくらし"]}]}, {"title": "ジュニア空想", "groups": [{"label": "不足", "mode": "special", "values": ["8〜10", "15", "17", "20〜"]}]}, {"title": "人狼サバイバル", "groups": [{"label": "不足", "mode": "special", "values": ["3〜6", "9〜12", "20〜"]}]}, {"title": "魔女の宅急便（ハードカバー）", "groups": [{"label": "不足", "mode": "missing", "values": ["5"]}]}, {"title": "ポケモンをさがせ", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["ポケモンをさがせ2", "ベストウィッシュ", "金銀", "クリスタル", "あたらしいぼうけん", "ルビーサファイア", "エメラルド"]}]}, {"title": "星のカービィ", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["7", "12", "13", "45"]}]}]}, {"category": "その他", "items": [{"title": "リラックマ生活シリーズ", "groups": [{"label": "不足", "mode": "special", "values": ["2", "5", "8〜11", "13〜14"]}]}, {"title": "ピーターラビットの絵本", "groups": [{"label": "青ラベル① 在庫あり", "mode": "stock", "values": ["1", "4"]}, {"label": "白ラベル① 在庫あり", "mode": "stock", "values": ["1", "2", "4", "5"]}]}, {"title": "ももこ", "groups": [{"label": "在庫あり", "mode": "stock", "values": ["ももこの21世紀 4"]}]}, {"title": "ワンピースマガジン", "groups": [{"label": "欲しい物", "mode": "missing", "values": ["4", "9"]}]}]}];
 const STORAGE_KEY = "mangaStockPro2State";
@@ -221,6 +414,9 @@ const CUSTOM_KEY = "mangaStockPro2Custom";
 let state = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
 let custom = JSON.parse(localStorage.getItem(CUSTOM_KEY) || "[]");
 let activeCategory = "すべて";
+let purchasedOnly = false;
+const PURCHASE_LOG_KEY = "mangaStockPro2PurchaseLog";
+let purchaseLog = JSON.parse(localStorage.getItem(PURCHASE_LOG_KEY) || "[]");
 
 const app = document.getElementById("app");
 const filters = document.getElementById("filters");
@@ -238,6 +434,27 @@ function allData() {
 function keyFor(cat,title,gi,vi) { return [cat,title,gi,vi].join("|"); }
 function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 function saveCustom() { localStorage.setItem(CUSTOM_KEY, JSON.stringify(custom)); }
+function savePurchaseLog() { localStorage.setItem(PURCHASE_LOG_KEY, JSON.stringify(purchaseLog)); }
+function addPurchaseLog(entry) {
+  purchaseLog.push({...entry, timestamp:Date.now()});
+  savePurchaseLog();
+}
+function removeLatestPurchaseLog(matchFn) {
+  for (let i=purchaseLog.length-1;i>=0;i--) {
+    if (matchFn(purchaseLog[i])) {
+      purchaseLog.splice(i,1);
+      savePurchaseLog();
+      break;
+    }
+  }
+}
+function formatDateTime(ts) {
+  if (!ts) return "日時記録なし";
+  return new Intl.DateTimeFormat("ja-JP",{
+    year:"numeric",month:"2-digit",day:"2-digit",
+    hour:"2-digit",minute:"2-digit"
+  }).format(new Date(ts));
+}
 
 function renderFilters() {
   const cats = ["すべて", ...allData().map(x=>x.category)];
@@ -251,72 +468,124 @@ function itemMatches(item,q) {
   return text.includes(q.toLowerCase());
 }
 
+function itemHasPurchased(category,item) {
+  return item.groups.some((group,gi)=>{
+    if (group.mode === "note") return false;
+    return group.values.some((value,vi)=>Number(state[keyFor(category,item.title,gi,vi)]||0)>0);
+  });
+}
+
 function render() {
   renderFilters();
   const q = search.value.trim();
   const data = allData();
-  let html = "";
+  let html = purchasedOnly ? `<div class="purchased-guide"><strong>購入済みリスト（「購入済み」をもう一度押すと戻ります）</strong></div>` : "";
   let titles = 0, targets = 0, done = 0;
 
   for (const cat of data) {
     if (activeCategory !== "すべて" && activeCategory !== cat.category) continue;
-    const items = cat.items.filter(i=>itemMatches(i,q));
+    const items = cat.items.filter(i=>itemMatches(i,q) && (!purchasedOnly || itemHasPurchased(cat.category,i)));
     if (!items.length) continue;
     html += `<div class="category-title">${cat.category}</div>`;
     for (const item of items) {
       titles++;
       const cardId = btoa(unescape(encodeURIComponent(cat.category+"|"+item.title))).replace(/=/g,"");
-      html += `<section class="card" id="card-${cardId}">
+      html += `<section class="card ${purchasedOnly?"open":""}" id="card-${cardId}">
         <div class="card-head"><span class="chev">▶</span><strong>${item.title}</strong></div>
         <div class="card-body">`;
       item.groups.forEach((g,gi)=>{
+        if (purchasedOnly && g.mode === "note") return;
         html += `<div class="group"><div class="group-label">${g.label}</div>`;
         if (g.mode === "note") {
           html += g.values.map(v=>`<div class="note">${v}</div>`).join("");
         } else if (g.mode === "wanted_count") {
-          html += g.values.map((v,vi)=>{
+          const counterHtml = g.values.map((v,vi)=>{
             const k = keyFor(cat.category,item.title,gi,vi);
             const val = Math.min(Number(state[k]||0),v.need);
+            if (purchasedOnly && val === 0) return "";
             targets += v.need; done += val;
             const boxes = Array.from({length:v.need},(_,i)=>`<span class="counter-box ${i<val?"on":""}"></span>`).join("");
             return `<div class="counter-row tap-counter" data-key="${k}" data-need="${v.need}">
               <span class="counter-name">${v.name}</span><span class="counter-boxes">${boxes}</span><b>${val}/${v.need}</b>
             </div>`;
           }).join("");
+          html += counterHtml;
         } else {
-          html += `<div class="chips">` + g.values.map((v,vi)=>{
+          const chipHtml = g.values.map((v,vi)=>{
             const k = keyFor(cat.category,item.title,gi,vi);
             const isDone = !!state[k];
-            if (g.mode !== "stock" || true) { targets++; if(isDone) done++; }
+            if (purchasedOnly && !isDone) return "";
+            targets++; if(isDone) done++;
             const cls = ["chip",g.mode,isDone?"done":""].join(" ");
             return `<button class="${cls}" data-key="${k}">${v}</button>`;
-          }).join("") + `</div>`;
+          }).join("");
+          if (chipHtml) html += `<div class="chips">${chipHtml}</div>`;
         }
         html += `</div>`;
       });
       html += `</div></section>`;
     }
   }
-  if (!html) html = `<div class="empty">該当する作品がありません</div>`;
+
+  if (!titles) html += `<div class="empty">${purchasedOnly?"購入済みの巻はまだありません":"該当する作品がありません"}</div>`;
   app.innerHTML = html;
   document.getElementById("titleCount").textContent = titles;
   document.getElementById("targetCount").textContent = targets;
   document.getElementById("doneCount").textContent = done;
 
+  const purchasedView = document.getElementById("purchasedView");
+  purchasedView.classList.toggle("active", purchasedOnly);
+  purchasedView.setAttribute("aria-pressed", String(purchasedOnly));
+
   app.querySelectorAll(".card-head").forEach(h=>h.onclick=()=>h.parentElement.classList.toggle("open"));
+
   app.querySelectorAll(".chip").forEach(ch=>ch.onclick=(e)=>{
     e.stopPropagation();
-    state[ch.dataset.key] = !state[ch.dataset.key];
+    const previous = !!state[ch.dataset.key];
+    const [category,title,gi,vi] = ch.dataset.key.split("|");
+    const item = allData().find(cat=>cat.category===category)?.items.find(value=>value.title===title);
+    const volume = item?.groups?.[Number(gi)]?.values?.[Number(vi)] ?? ch.textContent;
+
+    if (previous) {
+      showPurchaseCancel(ch.dataset.key,title,volume);
+      return;
+    }
+
+    state[ch.dataset.key] = true;
     saveState();
-    ch.classList.toggle("done", !!state[ch.dataset.key]);
-    updateStatsOnly();
+    addPurchaseLog({
+      key:ch.dataset.key,
+      category,
+      title,
+      detail:`${item?.groups?.[Number(gi)]?.label || ""}：${volume}`
+    });
+
+    ch.classList.add("done");
+    if (purchasedOnly) render();
+    else updateStatsOnly();
   });
+
   app.querySelectorAll(".tap-counter").forEach(row=>row.onclick=(e)=>{
     e.stopPropagation();
     const k=row.dataset.key, need=Number(row.dataset.need);
     let val=Number(state[k]||0);
     state[k] = val >= need ? 0 : val+1;
     saveState();
+
+    const [category,title,gi,vi] = k.split("|");
+    const item = allData().find(cat=>cat.category===category)?.items.find(value=>value.title===title);
+    const target = item?.groups?.[Number(gi)]?.values?.[Number(vi)];
+
+    if (state[k] === 0) {
+      purchaseLog = purchaseLog.filter(x=>x.key!==k);
+      savePurchaseLog();
+    } else {
+      addPurchaseLog({
+        key:k,category,title,
+        detail:`${target?.name || ""}　${state[k]}/${need}`
+      });
+    }
+
     const openCards=[...app.querySelectorAll(".card.open")].map(x=>x.id);
     render();
     openCards.forEach(id=>document.getElementById(id)?.classList.add("open"));
@@ -337,9 +606,52 @@ function updateStatsOnly() {
   document.getElementById("doneCount").textContent=done;
 }
 
+
+
+
 search.addEventListener("input",render);
 document.getElementById("clearSearch").onclick=()=>{search.value="";render();search.focus();};
 document.getElementById("closeAll").onclick=()=>app.querySelectorAll(".card").forEach(c=>c.classList.remove("open"));
+
+
+document.getElementById("purchasedView").onclick=()=>{
+  purchasedOnly=!purchasedOnly;
+  render();
+};
+
+const purchaseCancelModal=document.getElementById("purchaseCancelModal");
+let pendingPurchaseCancel=null;
+
+function showPurchaseCancel(key,title,volume) {
+  pendingPurchaseCancel={key,title,volume};
+  document.getElementById("purchaseCancelMessage").textContent=`${title} ${volume}巻を未購入へ戻します。`;
+  purchaseCancelModal.classList.add("show");
+}
+
+function closePurchaseCancel() {
+  purchaseCancelModal.classList.remove("show");
+  pendingPurchaseCancel=null;
+}
+
+document.getElementById("keepPurchased").onclick=closePurchaseCancel;
+document.getElementById("confirmPurchaseCancel").onclick=()=>{
+  if (!pendingPurchaseCancel) return;
+  const {key,title,volume}=pendingPurchaseCancel;
+  state[key]=false;
+  saveState();
+  removeLatestPurchaseLog(x=>x.key===key);
+  closePurchaseCancel();
+
+  if (purchasedOnly) render();
+  else {
+    app.querySelector(`.chip[data-key="${CSS.escape(key)}"]`)?.classList.remove("done");
+    updateStatsOnly();
+  }
+};
+
+purchaseCancelModal.addEventListener("click",event=>{
+  if (event.target===purchaseCancelModal) closePurchaseCancel();
+});
 
 const modal=document.getElementById("modal");
 document.getElementById("addTitle").onclick=()=>modal.classList.add("show");
@@ -368,7 +680,8 @@ function yen(n){ return Math.round(n || 0).toLocaleString("ja-JP") + "円"; }
 function calcPurchaseTotal(){
   let total = 0;
   calcRows.forEach(row=>{
-    const price = Number(row.dataset.price);
+    const priceInput = row.querySelector(".custom-row-price");
+    const price = priceInput ? Number(priceInput.value || 0) : Number(row.dataset.price);
     const qty = Number(row.dataset.qty || 0);
     total += price * qty;
   });
@@ -383,6 +696,11 @@ function updateCalculator(){
   const shipping = Number(document.getElementById("shipping").value || 0);
   const fee = Math.floor(sale * feeRate / 100);
   const profit = sale - fee - shipping - purchase;
+
+  const saleInput = document.getElementById("salePrice");
+  const shippingInput = document.getElementById("shipping");
+  saleInput.classList.toggle("filled", saleInput.value !== "");
+  shippingInput.classList.toggle("filled", shippingInput.value !== "");
   const rate = sale > 0 ? (profit / sale) * 100 : 0;
 
   document.getElementById("purchaseTotal").textContent = yen(purchase);
@@ -425,6 +743,16 @@ calcRows.forEach(row=>{
   document.getElementById(id).addEventListener("change", updateCalculator);
 });
 
+document.querySelectorAll(".custom-row-price").forEach(input=>{
+  input.addEventListener("input", updateCalculator);
+  input.addEventListener("change", updateCalculator);
+});
+
+
+document.querySelectorAll("#calcModal button").forEach(btn=>{
+  btn.addEventListener("dblclick", e=>e.preventDefault());
+});
+
 document.getElementById("openCalc").onclick = ()=>{
   calcModal.classList.add("show");
   updateCalculator();
@@ -436,6 +764,7 @@ document.getElementById("resetCalc").onclick = ()=>{
     row.querySelector(".qty").textContent = "0冊";
   });
   ["otherPrice","otherQty","salePrice","shipping"].forEach(id=>document.getElementById(id).value="");
+  document.querySelectorAll(".custom-row-price").forEach(input=>input.value="");
   document.getElementById("feeRate").value="10";
   updateCalculator();
 };
