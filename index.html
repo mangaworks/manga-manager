@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f7f2e8">
+<title>マンガ管理</title>
+<style>
+:root {
+  --bg:#f7f2e8; --card:#fff; --ink:#2f2a24; --sub:#766d63;
+  --line:#e6ded2; --accent:#58a96b; --accent2:#edf7ef; --warn:#fff4d8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif}
+header{position:sticky;top:0;z-index:10;background:rgba(247,242,232,.96);backdrop-filter:blur(10px);padding:14px 14px 10px;border-bottom:1px solid var(--line)}
+h1{font-size:24px;margin:0 0 10px}
+.toolbar{display:grid;grid-template-columns:1fr auto;gap:8px}
+input,select,button{font:inherit}
+input,select{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;background:#fff}
+button{border:0;border-radius:10px;padding:10px 13px;cursor:pointer}
+.primary{background:var(--accent);color:white;font-weight:700}
+.ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
+main{max-width:820px;margin:auto;padding:14px 14px 90px}
+.summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.badge{background:#fff;border:1px solid var(--line);border-radius:999px;padding:7px 10px;font-size:13px}
+.category{margin:18px 0 8px;font-size:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;margin:9px 0;overflow:hidden;box-shadow:0 2px 8px rgba(40,30,20,.04)}
+.titleRow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px;cursor:pointer}
+.titleText{font-weight:800}
+.count{font-size:12px;color:var(--sub);white-space:nowrap}
+.details{display:none;padding:0 14px 14px;border-top:1px solid var(--line)}
+.card.open .details{display:block}
+.note{background:var(--warn);padding:9px 10px;border-radius:9px;font-size:13px;margin-top:12px}
+.items{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.item{background:#eee8df;color:var(--ink);min-width:52px;font-weight:700}
+.item.done{background:var(--accent);color:#fff}
+.smallActions{display:flex;gap:8px;margin-top:12px}
+.smallActions button{padding:8px 10px;font-size:13px}
+.addbox{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:22px}
+.addgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.addgrid .full{grid-column:1/-1}
+.muted{color:var(--sub);font-size:13px}
+.empty{text-align:center;padding:28px;color:var(--sub)}
+@media(max-width:560px){
+  .addgrid{grid-template-columns:1fr}
+  .addgrid .full{grid-column:auto}
+  h1{font-size:22px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>📚 マンガ欠品管理</h1>
+  <div class="toolbar">
+    <input id="search" placeholder="タイトルを検索">
+    <button class="ghost" id="clearSearch">クリア</button>
+  </div>
+</header>
+
+<main>
+  <div class="summary">
+    <div class="badge" id="workCount"></div>
+    <div class="badge" id="itemCount"></div>
+    <div class="badge" id="doneCount"></div>
+  </div>
+  <div id="app"></div>
+
+  <section class="addbox">
+    <h2 style="margin-top:0;font-size:18px">＋ 新しい作品を追加</h2>
+    <div class="addgrid">
+      <select id="newCategory">
+        <option>男性コミック</option><option>女性コミック</option><option>ワイド</option>
+        <option>文庫漫画</option><option>小説</option><option>ハードカバー</option><option>その他</option>
+      </select>
+      <input id="newTitle" placeholder="作品名">
+      <input class="full" id="newItems" placeholder="欠品（例：1,3,5-8,10〜）">
+      <input class="full" id="newNote" placeholder="メモ（任意）">
+      <button class="primary full" id="addTitle">追加する</button>
+    </div>
+    <p class="muted">購入できた項目をタップすると緑色になります。状態はこの端末に自動保存されます。</p>
+  </section>
+</main>
+
+<script>
+const INITIAL_DATA = [{"category": "男性コミック", "title": "コナン", "items": ["19", "23", "33", "38", "87", "100", "102-103", "105", "106", "107"], "note": ""}, {"category": "男性コミック", "title": "ハンターハンター ①", "items": ["33以降"], "note": ""}, {"category": "男性コミック", "title": "ハンターハンター ②", "items": ["33", "35以降"], "note": ""}, {"category": "男性コミック", "title": "ハンターハンター ③", "items": ["2-3", "5", "7-9", "11-14", "17-18", "20-27", "30以降"], "note": ""}, {"category": "男性コミック", "title": "ナルト", "items": [], "note": "臨・兵・闘・者・陣・列・在は在庫有り"}, {"category": "男性コミック", "title": "ブラックジャック", "items": ["1", "3", "4", "17", "19", "23-25"], "note": ""}, {"category": "男性コミック", "title": "ドラゴンボール ①", "items": ["初版の2"], "note": ""}, {"category": "男性コミック", "title": "ドラゴンボール ②", "items": ["3", "6", "16", "24", "27-28", "32", "34", "38", "42"], "note": ""}, {"category": "男性コミック", "title": "ボボボーボ", "items": ["17", "18"], "note": ""}, {"category": "男性コミック", "title": "ボボボー新説", "items": ["2〜5"], "note": ""}, {"category": "男性コミック", "title": "テニスの王子様", "items": ["10.5"], "note": ""}, {"category": "男性コミック", "title": "新テニスの王子様", "items": ["10.5"], "note": "23.5以外"}, {"category": "男性コミック", "title": "デスノート", "items": ["1-8"], "note": "9・10・11・12は在庫有り"}, {"category": "男性コミック", "title": "宇宙兄弟", "items": ["26〜"], "note": ""}, {"category": "男性コミック", "title": "ヒストリエ", "items": ["12"], "note": ""}, {"category": "男性コミック", "title": "ベルセルク", "items": ["1", "43"], "note": ""}, {"category": "男性コミック", "title": "頭文字D", "items": ["①"], "note": ""}, {"category": "男性コミック", "title": "へうげもの", "items": ["17-19", "21-25"], "note": ""}, {"category": "男性コミック", "title": "プラネテス", "items": ["1", "3", "4"], "note": "原文「1.3.4時」は「1・3・4」として登録"}, {"category": "男性コミック", "title": "ゴーストアンドレディ", "items": ["上"], "note": ""}, {"category": "男性コミック", "title": "にゃんこ大戦争", "items": ["2", "4〜8", "10〜"], "note": ""}, {"category": "男性コミック", "title": "英語ドラえもん", "items": ["2", "4〜"], "note": ""}, {"category": "女性コミック", "title": "なまいきざかり", "items": ["20〜23"], "note": ""}, {"category": "女性コミック", "title": "セーラームーン", "items": ["14", "15"], "note": ""}, {"category": "女性コミック", "title": "はいからさんが通る（KC）", "items": ["4"], "note": ""}, {"category": "女性コミック", "title": "NANA", "items": ["3-5"], "note": ""}, {"category": "女性コミック", "title": "ちびまる子", "items": ["16"], "note": ""}, {"category": "女性コミック", "title": "動物のお医者さん（愛蔵版）", "items": ["1", "4"], "note": ""}, {"category": "女性コミック", "title": "コジコジ（りぼん）", "items": ["3", "4"], "note": ""}, {"category": "女性コミック", "title": "凪のお暇", "items": ["11"], "note": ""}, {"category": "女性コミック", "title": "東京ミュウミュウ 新装版", "items": ["3", "8", "9", "10"], "note": ""}, {"category": "ワイド", "title": "怪盗ジャンヌ 完全版", "items": ["6"], "note": ""}, {"category": "ワイド", "title": "ヘタリア axis powers", "items": ["6"], "note": ""}, {"category": "ワイド", "title": "つば九郎", "items": ["4〜"], "note": ""}, {"category": "ワイド", "title": "こどものおもちゃ 完全版", "items": ["7"], "note": ""}, {"category": "ワイド", "title": "ホワッツマイケル", "items": ["5", "6", "7", "8"], "note": ""}, {"category": "ワイド", "title": "天使なんかじゃない 完全版", "items": ["1"], "note": ""}, {"category": "文庫漫画", "title": "天上の虹（文庫）", "items": ["7-9", "11"], "note": ""}, {"category": "文庫漫画", "title": "へうげもの（文庫）", "items": ["8-12"], "note": ""}, {"category": "文庫漫画", "title": "火の鳥（文庫）", "items": ["8", "10-13"], "note": ""}, {"category": "文庫漫画", "title": "バナナフィッシュ（文庫）", "items": ["2", "5-8", "10-11"], "note": ""}, {"category": "文庫漫画", "title": "あさきゆめみし（文庫）", "items": ["5", "7"], "note": ""}, {"category": "文庫漫画", "title": "ブラックジャック（文庫）", "items": ["3", "5〜"], "note": ""}, {"category": "小説", "title": "シャーロックホームズ（新版）①", "items": ["2", "8", "9"], "note": ""}, {"category": "小説", "title": "シャーロックホームズ（新版）②", "items": ["2〜"], "note": ""}, {"category": "小説", "title": "中二病でも恋がしたい", "items": ["4"], "note": ""}, {"category": "小説", "title": "白銀の壚", "items": ["1"], "note": ""}, {"category": "ハードカバー", "title": "火の鳥（愛蔵版）", "items": ["復活羽衣編", "ギリシャローマ編"], "note": ""}, {"category": "その他", "title": "リラックマ生活シリーズ", "items": ["2", "5", "8〜11", "13〜14"], "note": ""}];
+const STORAGE_KEY = "mangaManagerV1";
+let state = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+if (!state) {
+  state = INITIAL_DATA.map((x, i) => ({...x, id:"seed-"+i, done:{}}));
+}
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  render();
+}
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]));
+}
+function render() {
+  const q = document.getElementById("search").value.trim().toLowerCase();
+  const app = document.getElementById("app");
+  const cats = [...new Set(state.map(x=>x.category))];
+  let html = "", visible = 0;
+  cats.forEach(cat => {
+    const rows = state.filter(x => x.category===cat && (!q || (x.title+" "+x.note+" "+x.items.join(" ")).toLowerCase().includes(q)));
+    if (!rows.length) return;
+    html += `<h2 class="category">${esc(cat)}</h2>`;
+    rows.forEach(x => {
+      visible++;
+      const doneN = x.items.filter(it=>x.done && x.done[it]).length;
+      html += `<article class="card" data-id="${esc(x.id)}">
+        <div class="titleRow" onclick="this.parentElement.classList.toggle('open')">
+          <div class="titleText">${esc(x.title)}</div>
+          <div class="count">${doneN} / ${x.items.length} 購入済み</div>
+        </div>
+        <div class="details">
+          ${x.note ? `<div class="note">${esc(x.note)}</div>` : ""}
+          <div class="items">
+            ${x.items.length ? x.items.map(it=>`<button class="item ${x.done && x.done[it] ? "done":""}" onclick="event.stopPropagation();toggleItem('${esc(x.id)}','${encodeURIComponent(it)}')">${x.done && x.done[it] ? "✓ " : ""}${esc(it)}</button>`).join("") : `<span class="muted">欠品巻の登録なし（メモのみ）</span>`}
+          </div>
+          <div class="smallActions">
+            <button class="ghost" onclick="event.stopPropagation();addItem('${esc(x.id)}')">欠品を追加</button>
+            <button class="ghost" onclick="event.stopPropagation();deleteTitle('${esc(x.id)}')">作品を削除</button>
+          </div>
+        </div>
+      </article>`;
+    });
+  });
+  app.innerHTML = html || `<div class="empty">該当する作品がありません</div>`;
+
+  const allItems = state.flatMap(x=>x.items);
+  const allDone = state.reduce((n,x)=>n+x.items.filter(it=>x.done && x.done[it]).length,0);
+  document.getElementById("workCount").textContent = `作品 ${state.length}件`;
+  document.getElementById("itemCount").textContent = `欠品項目 ${allItems.length}件`;
+  document.getElementById("doneCount").textContent = `購入済み ${allDone}件`;
+}
+window.toggleItem = function(id, encoded) {
+  const it = decodeURIComponent(encoded);
+  const x = state.find(v=>v.id===id);
+  x.done = x.done || {};
+  x.done[it] = !x.done[it];
+  save();
+}
+window.addItem = function(id) {
+  const value = prompt("追加する欠品巻・項目を入力してください");
+  if (!value) return;
+  const x = state.find(v=>v.id===id);
+  value.split(/[、,]/).map(s=>s.trim()).filter(Boolean).forEach(v=>{
+    if(!x.items.includes(v)) x.items.push(v);
+  });
+  save();
+}
+window.deleteTitle = function(id) {
+  const x = state.find(v=>v.id===id);
+  if (confirm(`「${x.title}」を削除しますか？`)) {
+    state = state.filter(v=>v.id!==id);
+    save();
+  }
+}
+document.getElementById("search").addEventListener("input", render);
+document.getElementById("clearSearch").onclick = () => {
+  document.getElementById("search").value="";
+  render();
+};
+document.getElementById("addTitle").onclick = () => {
+  const category = document.getElementById("newCategory").value;
+  const title = document.getElementById("newTitle").value.trim();
+  const items = document.getElementById("newItems").value.split(/[、,]/).map(s=>s.trim()).filter(Boolean);
+  const note = document.getElementById("newNote").value.trim();
+  if(!title) return alert("作品名を入力してください");
+  state.push({category,title,items,note,id:"user-"+Date.now(),done:{}});
+  ["newTitle","newItems","newNote"].forEach(id=>document.getElementById(id).value="");
+  save();
+};
+render();
+</script>
+</body>
+</html>
