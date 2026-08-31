@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#080808">
-<title>漫画仕入れ管理 Pro 3.8</title>
+<title>漫画仕入れ管理 Pro 4.0</title>
 <style>
 :root {
   --bg:#090909; --panel:#161616; --panel2:#202020; --line:#343434;
@@ -31,6 +31,11 @@ h1{font-size:20px;margin:0;flex:1;color:var(--gold)}
 .search input:focus{border-color:var(--gold)}
 .reset{border:0;background:#292929;color:#ddd;border-radius:12px;padding:0 12px}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px 12px 0;max-width:900px;margin:auto}
+.sync-bar{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;padding:10px 12px 0;max-width:900px;margin:auto}
+.sync-btn{border:1px solid #3e5874;background:#172536;color:#cbe2ff;border-radius:12px;padding:10px 8px;font-size:13px;font-weight:800}
+.sync-btn:disabled{opacity:.55}
+.sync-settings{width:44px;border-color:#494949;background:#202020;color:#ddd}
+.sync-note{grid-column:1/-1;font-size:11px;color:#999;text-align:center;min-height:15px}
 .stat{background:var(--panel);border:1px solid #292929;border-radius:14px;padding:11px;text-align:center;color:inherit}
 .stat b{display:block;font-size:19px;color:var(--gold)} .stat span{font-size:11px;color:var(--muted)}
 .stat-button{width:100%;cursor:pointer}
@@ -107,52 +112,6 @@ footer{position:fixed;bottom:0;left:0;right:0;background:rgba(8,8,8,.96);border-
 .confirm-back{background:#333;color:#fff}
 .confirm-remove{background:var(--red);color:#190303}
 @media(min-width:700px){.card-head strong{font-size:17px}}
-
-.footer-inner.footer-four{grid-template-columns:repeat(4,1fr)}
-.footer-inner.footer-four .footer-btn{padding:12px 5px;font-size:13px}
-.calc-grid{
-  display:grid;
-  grid-template-columns:minmax(92px,1.25fr) 58px 68px 58px;
-  gap:10px;
-  align-items:center;
-  margin-bottom:12px;
-}
-.calc-grid .price-label,.calc-grid .price-input{
-  min-height:56px;display:flex;align-items:center;justify-content:center;
-  font-weight:900;font-size:19px;border-radius:12px
-}
-.calc-grid .price-label{color:#f4e7b0;background:#222;border:1px solid #444}
-.calc-grid .price-input{
-  width:100%;background:#0f0f0f;color:#fff;border:1px solid #555;
-  text-align:center;padding:8px
-}
-.calc-grid button{
-  min-width:58px;min-height:58px;border:1px solid #555;background:#292929;
-  color:#fff;border-radius:13px;font-size:26px;font-weight:900;touch-action:manipulation
-}
-.calc-grid .qty{min-width:58px;text-align:center;font-weight:900;color:var(--gold);font-size:16px}
-.calc-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.calc-summary{background:#0f0f0f;border:1px solid #3b3b3b;border-radius:14px;padding:13px;margin:14px 0}
-.calc-summary div{display:flex;justify-content:space-between;gap:12px;padding:5px 0}
-.calc-summary b{color:var(--gold)}
-.judgement{border-radius:16px;padding:18px;text-align:center;margin-top:12px;border:2px solid #555}
-.judgement .go{font-size:34px;font-weight:1000;letter-spacing:.05em}
-.judgement .rank{font-size:20px;margin:5px 0}
-.judgement .message{font-weight:800}
-.judgement.green{background:#102d1d;border-color:#28c76f}
-.judgement.blue{background:#12253b;border-color:#62a8ff}
-.judgement.yellow{background:#332b0e;border-color:#f5c84c}
-.judgement.red{background:#351313;border-color:#ff5d5d}
-.calc-note{font-size:12px;color:#aaa;line-height:1.6;margin-top:8px}
-.required-input{border-color:var(--red)!important;background:#2a1111!important}
-.required-input.filled{border-color:#444!important;background:#0f0f0f!important}
-#calcModal button,#calcModal input,#calcModal select{touch-action:manipulation}
-@media(max-width:480px){
-  .footer-inner.footer-four{gap:6px}
-  .footer-inner.footer-four .footer-btn{font-size:12px;padding:11px 3px}
-  .calc-grid{grid-template-columns:minmax(76px,1fr) 56px 62px 56px;gap:7px}
-}
-
 </style>
 </head>
 <body>
@@ -160,7 +119,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:rgba(8,8,8,.96);border-
 
 <header>
   <div class="topline">
-    <h1>漫画仕入れ管理 Pro 3.8</h1>
+    <h1>漫画仕入れ管理 Pro 4.0</h1>
     <span class="badge" id="saveStatus" role="status" aria-live="polite">保存を確認中</span>
   </div>
   <div class="search">
@@ -175,15 +134,21 @@ footer{position:fixed;bottom:0;left:0;right:0;background:rgba(8,8,8,.96);border-
   <button class="stat stat-button" id="purchasedView" type="button" aria-pressed="false"><b id="doneCount">0</b><span>購入済み</span></button>
 </section>
 
+<section class="sync-bar">
+  <button class="sync-btn" id="cloudSave" type="button">☁ 共有保存</button>
+  <button class="sync-btn" id="cloudLoad" type="button">↻ 最新に更新</button>
+  <button class="sync-btn sync-settings" id="cloudSettings" type="button" aria-label="共有設定">⚙</button>
+  <div class="sync-note" id="syncStatus">共有設定をすると2台で同じデータを使えます</div>
+</section>
+
 <div class="filters" id="filters"></div>
 <main id="app"></main>
 
 <footer>
-  <div class="footer-inner footer-four">
-    <button class="footer-btn" id="closeAll">閉じる</button>
+  <div class="footer-inner">
+    <button class="footer-btn" id="closeAll">すべて閉じる</button>
     <button class="footer-btn" id="showLog">履歴</button>
-    <button class="footer-btn" id="openCalc">🧮 計算</button>
-    <button class="footer-btn primary" id="addTitle">＋ 作品</button>
+    <button class="footer-btn primary" id="addTitle">＋ 作品追加</button>
   </div>
 </footer>
 
@@ -200,81 +165,13 @@ footer{position:fixed;bottom:0;left:0;right:0;background:rgba(8,8,8,.96);border-
   </div>
 </div>
 
-
-<div class="modal" id="calcModal">
+<div class="modal" id="syncModal">
   <div class="sheet">
-    <h2>🧮 仕入れ計算</h2>
-
-    <div class="calc-grid" data-price="110">
-      <div class="price-label">110円</div>
-      <button type="button" class="qty-minus">−</button>
-      <div class="qty">0冊</div>
-      <button type="button" class="qty-plus">＋</button>
-    </div>
-    <div class="calc-grid" data-price="132">
-      <div class="price-label">132円</div>
-      <button type="button" class="qty-minus">−</button>
-      <div class="qty">0冊</div>
-      <button type="button" class="qty-plus">＋</button>
-    </div>
-    <div class="calc-grid" data-price="0">
-      <input class="price-input custom-row-price" inputmode="numeric" type="number" min="0" placeholder="価格">
-      <button type="button" class="qty-minus">−</button>
-      <div class="qty">0冊</div>
-      <button type="button" class="qty-plus">＋</button>
-    </div>
-    <div class="calc-grid" data-price="0">
-      <input class="price-input custom-row-price" inputmode="numeric" type="number" min="0" placeholder="価格">
-      <button type="button" class="qty-minus">−</button>
-      <div class="qty">0冊</div>
-      <button type="button" class="qty-plus">＋</button>
-    </div>
-
-    <div class="calc-row">
-      <div class="field"><label>その他の単価</label><input id="otherPrice" inputmode="numeric" type="number" min="0" placeholder="例：330"></div>
-      <div class="field"><label>その他の冊数</label><input id="otherQty" inputmode="numeric" type="number" min="0" placeholder="0"></div>
-    </div>
-
-    <div class="field"><label>販売価格</label><input id="salePrice" class="required-input" inputmode="numeric" type="number" min="0" placeholder="必須：例 5980"></div>
-
-    <div class="calc-row">
-      <div class="field"><label>販売手数料</label>
-        <select id="feeRate">
-          <option value="10">メルカリ 10%</option>
-          <option value="6">ラクマ 6%</option>
-          <option value="5">Yahoo!フリマ 5%</option>
-          <option value="0">手数料なし</option>
-        </select>
-      </div>
-      <div class="field"><label>送料</label>
-        <select id="shipping" class="required-input">
-          <option value="">選択してください</option>
-          <option value="750">750円</option>
-          <option value="870">870円</option>
-          <option value="1070">1070円</option>
-          <option value="1200">1200円</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="calc-summary">
-      <div><span>仕入れ合計</span><b id="purchaseTotal">0円</b></div>
-      <div><span>販売手数料</span><b id="feeAmount">0円</b></div>
-      <div><span>利益</span><b id="profitAmount">0円</b></div>
-      <div><span>利益率</span><b id="profitRate">0.0%</b></div>
-    </div>
-
-    <div id="judgement" class="judgement red">
-      <div class="go">🔴 PASS</div>
-      <div class="rank">★☆☆☆☆</div>
-      <div class="message">販売価格と送料を入力してください</div>
-    </div>
-    <div class="calc-note">判定基準：3,000円以上＝積極仕入れ／1,500〜2,999円＝とても良い／700〜1,499円＝仕入れOK／700円未満＝基本見送り</div>
-
-    <div class="actions" style="margin-top:14px">
-      <button class="cancel" id="resetCalc">リセット</button>
-      <button class="save" id="closeCalc">閉じる</button>
-    </div>
+    <h2>オンライン共有設定</h2>
+    <div class="field"><label>FirebaseデータベースURL</label><input id="databaseUrl" type="url" placeholder="https://〇〇-default-rtdb.asia-southeast1.firebasedatabase.app" autocapitalize="off" autocomplete="off"></div>
+    <div class="field"><label>共有ID（2台とも同じ文字）</label><input id="shareId" placeholder="例：latte-manga-2026" autocapitalize="off" autocomplete="off"></div>
+    <p class="form-help">この設定は端末内だけに保存されます。2台目にも同じURLと共有IDを入力してください。</p>
+    <div class="actions"><button class="cancel" id="cancelSyncSettings">キャンセル</button><button class="save" id="saveSyncSettings">設定を保存</button></div>
   </div>
 </div>
 
@@ -306,6 +203,12 @@ const STORAGE_KEY = "mangaStockPro2State";
 const CUSTOM_KEY = "mangaStockPro2Custom";
 const HIDDEN_KEY = "mangaStockPro31HiddenTitles";
 const LOG_KEY = "mangaStockPro34ActionLog";
+const SYNC_CONFIG_KEY = "mangaStockPro40SyncConfig";
+const SYNC_UPDATED_KEY = "mangaStockPro40LastCloudUpdate";
+const DEFAULT_SYNC_CONFIG = {
+  databaseUrl:"https://manga-stock-manager-default-rtdb.asia-southeast1.firebasedatabase.app",
+  shareId:"latte-manga-7f3c91b8a624"
+};
 function loadSaved(key, fallback) {
   try {
     const saved = localStorage.getItem(key);
@@ -321,6 +224,9 @@ let hiddenTitles = loadSaved(HIDDEN_KEY, []);
 if (!Array.isArray(hiddenTitles)) hiddenTitles = [];
 let actionLog = loadSaved(LOG_KEY, []);
 if (!Array.isArray(actionLog)) actionLog = [];
+let syncConfig = loadSaved(SYNC_CONFIG_KEY, DEFAULT_SYNC_CONFIG);
+if (!syncConfig?.databaseUrl || !syncConfig?.shareId) syncConfig={...DEFAULT_SYNC_CONFIG};
+let lastCloudUpdate = localStorage.getItem(SYNC_UPDATED_KEY) || "";
 let activeCategory = "すべて";
 let purchasedOnly = false;
 
@@ -374,6 +280,69 @@ function saveState() { return persist(STORAGE_KEY, state); }
 function saveCustom() { return persist(CUSTOM_KEY, custom); }
 function saveHiddenTitles() { return persist(HIDDEN_KEY, hiddenTitles); }
 function saveActionLog() { return persist(LOG_KEY, actionLog); }
+function normalizeDatabaseUrl(value) { return String(value || "").trim().replace(/\/+$/, ""); }
+function safeShareId(value) { return String(value || "").trim().replace(/[^a-zA-Z0-9_-]/g, "-").slice(0,80); }
+function cloudEndpoint() {
+  const base=normalizeDatabaseUrl(syncConfig.databaseUrl);
+  const id=safeShareId(syncConfig.shareId);
+  return base && id ? `${base}/mangaStock/${encodeURIComponent(id)}.json` : "";
+}
+function setSyncStatus(message,error=false) {
+  const el=document.getElementById("syncStatus");
+  el.textContent=message;
+  el.style.color=error?"#ff9c9c":"#9dc9ff";
+}
+function setSyncBusy(busy) {
+  document.getElementById("cloudSave").disabled=busy;
+  document.getElementById("cloudLoad").disabled=busy;
+}
+function cloudSnapshot() {
+  return {version:4,updatedAt:new Date().toISOString(),state,custom,hiddenTitles,actionLog};
+}
+function applyCloudSnapshot(data) {
+  if (!data || typeof data!=="object") throw new Error("共有データが空です");
+  const previous={state,custom,hiddenTitles,actionLog};
+  state=(data.state && typeof data.state==="object")?data.state:{};
+  custom=Array.isArray(data.custom)?data.custom:[];
+  hiddenTitles=Array.isArray(data.hiddenTitles)?data.hiddenTitles:[];
+  actionLog=Array.isArray(data.actionLog)?data.actionLog.slice(0,500):[];
+  if (!(saveState() && saveCustom() && saveHiddenTitles() && saveActionLog())) {
+    ({state,custom,hiddenTitles,actionLog}=previous);
+    throw new Error("端末への保存に失敗しました");
+  }
+  lastCloudUpdate=data.updatedAt || new Date().toISOString();
+  localStorage.setItem(SYNC_UPDATED_KEY,lastCloudUpdate);
+}
+async function uploadCloud() {
+  const endpoint=cloudEndpoint();
+  if(!endpoint){openSyncSettings();return;}
+  setSyncBusy(true); setSyncStatus("共有データを保存中…");
+  try {
+    const response=await fetch(endpoint,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(cloudSnapshot())});
+    if(!response.ok) throw new Error(`通信エラー ${response.status}`);
+    const saved=await response.json();
+    lastCloudUpdate=saved.updatedAt || new Date().toISOString();
+    localStorage.setItem(SYNC_UPDATED_KEY,lastCloudUpdate);
+    setSyncStatus(`✓ 共有保存済み ${formatLogTime(lastCloudUpdate)}`);
+  } catch(error) {
+    console.error(error); setSyncStatus("共有保存できません。設定または通信をご確認ください",true);
+  } finally {setSyncBusy(false);}
+}
+async function downloadCloud() {
+  const endpoint=cloudEndpoint();
+  if(!endpoint){openSyncSettings();return;}
+  setSyncBusy(true); setSyncStatus("最新データを確認中…");
+  try {
+    const response=await fetch(endpoint,{cache:"no-store"});
+    if(!response.ok) throw new Error(`通信エラー ${response.status}`);
+    const data=await response.json();
+    if(!data) throw new Error("まだ共有保存されていません");
+    applyCloudSnapshot(data); render();
+    setSyncStatus(`✓ 最新に更新 ${formatLogTime(lastCloudUpdate)}`);
+  } catch(error) {
+    console.error(error); setSyncStatus(error.message || "更新できません",true);
+  } finally {setSyncBusy(false);}
+}
 function addLog(action, detail) {
   const previous = actionLog.slice();
   actionLog.unshift({
@@ -589,8 +558,29 @@ document.getElementById("purchasedView").onclick=()=>{
 
 const modal=document.getElementById("modal");
 const logModal=document.getElementById("logModal");
+const syncModal=document.getElementById("syncModal");
 const purchaseCancelModal=document.getElementById("purchaseCancelModal");
 let pendingPurchaseCancel=null;
+
+function openSyncSettings() {
+  document.getElementById("databaseUrl").value=syncConfig.databaseUrl || "";
+  document.getElementById("shareId").value=syncConfig.shareId || "";
+  syncModal.classList.add("show");
+}
+document.getElementById("cloudSettings").onclick=openSyncSettings;
+document.getElementById("cancelSyncSettings").onclick=()=>syncModal.classList.remove("show");
+document.getElementById("saveSyncSettings").onclick=()=>{
+  const databaseUrl=normalizeDatabaseUrl(document.getElementById("databaseUrl").value);
+  const shareId=safeShareId(document.getElementById("shareId").value);
+  if(!/^https:\/\/.+\.firebasedatabase\.app$/.test(databaseUrl) && !/^https:\/\/.+\.firebaseio\.com$/.test(databaseUrl)) {alert("FirebaseデータベースURLを正しく入力してください");return;}
+  if(shareId.length<6){alert("共有IDは6文字以上で入力してください");return;}
+  syncConfig={databaseUrl,shareId};
+  if(!persist(SYNC_CONFIG_KEY,syncConfig)) return;
+  syncModal.classList.remove("show");
+  setSyncStatus("共有設定済み。最初に「共有保存」を押してください");
+};
+document.getElementById("cloudSave").onclick=uploadCloud;
+document.getElementById("cloudLoad").onclick=downloadCloud;
 
 function showPurchaseCancel(key,title,volume) {
   pendingPurchaseCancel={key,title,volume};
@@ -675,104 +665,6 @@ document.getElementById("saveAdd").onclick=()=>{
   render();
 };
 
-
-const calcModal = document.getElementById("calcModal");
-const calcRows = [...document.querySelectorAll("#calcModal .calc-grid")];
-
-function yen(n){ return Math.round(n || 0).toLocaleString("ja-JP") + "円"; }
-
-function calcPurchaseTotal(){
-  let total = 0;
-  calcRows.forEach(row=>{
-    const priceInput = row.querySelector(".custom-row-price");
-    const price = priceInput ? Number(priceInput.value || 0) : Number(row.dataset.price);
-    const qty = Number(row.dataset.qty || 0);
-    total += price * qty;
-  });
-  total += Number(document.getElementById("otherPrice").value || 0) *
-           Number(document.getElementById("otherQty").value || 0);
-  return total;
-}
-
-function updateCalculator(){
-  const purchase = calcPurchaseTotal();
-  const saleInput = document.getElementById("salePrice");
-  const shippingInput = document.getElementById("shipping");
-  const sale = Number(saleInput.value || 0);
-  const feeRate = Number(document.getElementById("feeRate").value || 0);
-  const shipping = Number(shippingInput.value || 0);
-  const fee = Math.floor(sale * feeRate / 100);
-  const profit = sale - fee - shipping - purchase;
-  const rate = sale > 0 ? (profit / sale) * 100 : 0;
-
-  saleInput.classList.toggle("filled", saleInput.value !== "");
-  shippingInput.classList.toggle("filled", shippingInput.value !== "");
-
-  document.getElementById("purchaseTotal").textContent = yen(purchase);
-  document.getElementById("feeAmount").textContent = yen(fee);
-  document.getElementById("profitAmount").textContent = yen(profit);
-  document.getElementById("profitRate").textContent = rate.toFixed(1) + "%";
-
-  const j = document.getElementById("judgement");
-  let color = "red", go = "🔴 PASS", rank = "★☆☆☆☆", message = "基本見送り";
-  if (!saleInput.value || !shippingInput.value) {
-    message = "販売価格と送料を入力してください";
-  } else if (profit >= 3000) {
-    color = "green"; go = "🟢 GO！"; rank = "★★★★★"; message = "積極的に仕入れ";
-  } else if (profit >= 1500) {
-    color = "blue"; go = "🔵 GO！"; rank = "★★★★☆"; message = "とても良い";
-  } else if (profit >= 700) {
-    color = "yellow"; go = "🟡 GO"; rank = "★★★☆☆"; message = "仕入れOK";
-  }
-  j.className = "judgement " + color;
-  j.innerHTML = `<div class="go">${go}</div><div class="rank">${rank}</div><div class="message">${message}</div>`;
-}
-
-calcRows.forEach(row=>{
-  row.dataset.qty = "0";
-  const qtyEl = row.querySelector(".qty");
-  row.querySelector(".qty-plus").onclick = ()=>{
-    row.dataset.qty = String(Number(row.dataset.qty || 0) + 1);
-    qtyEl.textContent = row.dataset.qty + "冊";
-    updateCalculator();
-  };
-  row.querySelector(".qty-minus").onclick = ()=>{
-    row.dataset.qty = String(Math.max(0, Number(row.dataset.qty || 0) - 1));
-    qtyEl.textContent = row.dataset.qty + "冊";
-    updateCalculator();
-  };
-});
-
-["otherPrice","otherQty","salePrice","feeRate","shipping"].forEach(id=>{
-  document.getElementById(id).addEventListener("input", updateCalculator);
-  document.getElementById(id).addEventListener("change", updateCalculator);
-});
-document.querySelectorAll(".custom-row-price").forEach(input=>{
-  input.addEventListener("input", updateCalculator);
-  input.addEventListener("change", updateCalculator);
-});
-document.querySelectorAll("#calcModal button").forEach(btn=>{
-  btn.addEventListener("dblclick", e=>e.preventDefault());
-});
-
-document.getElementById("openCalc").onclick = ()=>{
-  calcModal.classList.add("show");
-  updateCalculator();
-};
-document.getElementById("closeCalc").onclick = ()=>calcModal.classList.remove("show");
-document.getElementById("resetCalc").onclick = ()=>{
-  calcRows.forEach(row=>{
-    row.dataset.qty = "0";
-    row.querySelector(".qty").textContent = "0冊";
-  });
-  ["otherPrice","otherQty","salePrice"].forEach(id=>document.getElementById(id).value="");
-  document.querySelectorAll(".custom-row-price").forEach(input=>input.value="");
-  document.getElementById("shipping").value="";
-  document.getElementById("feeRate").value="10";
-  updateCalculator();
-};
-
-
 setTimeout(()=>document.getElementById("splash").classList.add("hide"),900);
 setTimeout(()=>document.getElementById("splash").remove(),1500);
 try {
@@ -786,6 +678,7 @@ try {
   showSaveStatus("保存できません", "error");
 }
 render();
+if(cloudEndpoint()) setSyncStatus(lastCloudUpdate?`前回同期 ${formatLogTime(lastCloudUpdate)}`:"共有設定済み");
 </script>
 </body>
 </html>
