@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#080808">
-<title>漫画仕入れ管理 Pro 4.0</title>
+<title>漫画仕入れ管理 Pro 4.1</title>
 <style>
 :root {
   --bg:#090909; --panel:#161616; --panel2:#202020; --line:#343434;
@@ -119,7 +119,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:rgba(8,8,8,.96);border-
 
 <header>
   <div class="topline">
-    <h1>漫画仕入れ管理 Pro 4.0</h1>
+    <h1>漫画仕入れ管理 Pro 4.1</h1>
     <span class="badge" id="saveStatus" role="status" aria-live="polite">保存を確認中</span>
   </div>
   <div class="search">
@@ -238,13 +238,19 @@ let saveStatusTimer;
 
 function allData() {
   const cloned = JSON.parse(JSON.stringify(MASTER));
+  // 同じカテゴリー・作品名の新規登録がある場合は、新規登録を優先する。
+  // 元データを削除後に同名作品を追加しても、元データを復活させない。
+  for (const cat of cloned) {
+    cat.items = cat.items.filter(item => {
+      const key=titleKey(cat.category,item.title);
+      const replacedByCustom=custom.some(value=>value.category===cat.category&&value.item?.title===item.title);
+      return !hiddenTitles.includes(key) && !replacedByCustom;
+    });
+  }
   for (const c of custom) {
     let cat = cloned.find(x => x.category === c.category);
     if (!cat) { cat = {category:c.category, items:[]}; cloned.push(cat); }
     cat.items.push(c.item);
-  }
-  for (const cat of cloned) {
-    cat.items = cat.items.filter(item => !hiddenTitles.includes(titleKey(cat.category, item.title)));
   }
   return cloned;
 }
@@ -643,12 +649,6 @@ document.getElementById("saveAdd").onclick=()=>{
   if(!title){alert("作品名を入力してください");return;}
   if(!Number.isInteger(finalVolume)||finalVolume<1||finalVolume>300){alert("最終巻は1〜300の数字で入力してください");return;}
   const values=Array.from({length:finalVolume},(_,i)=>String(i+1));
-  const previousHiddenTitles=hiddenTitles;
-  hiddenTitles=hiddenTitles.filter(value=>value!==titleKey(category,title));
-  if(!saveHiddenTitles()){
-    hiddenTitles=previousHiddenTitles;
-    return;
-  }
   const added = {category,item:{title,finalVolume,groups:[{label:`全巻（1〜${finalVolume}巻）`,mode:"missing",values}]}};
   const existingIndex=custom.findIndex(value=>value.category===category&&value.item?.title===title);
   const previousCustom=JSON.parse(JSON.stringify(custom));
