@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#080808">
-<title>漫画仕入れ管理 Pro 4.1</title>
+<title>漫画仕入れ管理 Pro 4.2</title>
 <style>
 :root {
   --bg:#090909; --panel:#161616; --panel2:#202020; --line:#343434;
@@ -119,7 +119,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:rgba(8,8,8,.96);border-
 
 <header>
   <div class="topline">
-    <h1>漫画仕入れ管理 Pro 4.1</h1>
+    <h1>漫画仕入れ管理 Pro 4.2</h1>
     <span class="badge" id="saveStatus" role="status" aria-live="polite">保存を確認中</span>
   </div>
   <div class="search">
@@ -205,6 +205,7 @@ const HIDDEN_KEY = "mangaStockPro31HiddenTitles";
 const LOG_KEY = "mangaStockPro34ActionLog";
 const SYNC_CONFIG_KEY = "mangaStockPro40SyncConfig";
 const SYNC_UPDATED_KEY = "mangaStockPro40LastCloudUpdate";
+const SYNC_PENDING_KEY = "mangaStockPro42SyncPending";
 const DEFAULT_SYNC_CONFIG = {
   databaseUrl:"https://manga-stock-manager-default-rtdb.asia-southeast1.firebasedatabase.app",
   shareId:"latte-manga-7f3c91b8a624"
@@ -225,8 +226,14 @@ if (!Array.isArray(hiddenTitles)) hiddenTitles = [];
 let actionLog = loadSaved(LOG_KEY, []);
 if (!Array.isArray(actionLog)) actionLog = [];
 let syncConfig = loadSaved(SYNC_CONFIG_KEY, DEFAULT_SYNC_CONFIG);
-if (!syncConfig?.databaseUrl || !syncConfig?.shareId) syncConfig={...DEFAULT_SYNC_CONFIG};
+// Pro 4.0/4.1で端末ごとに残った古い・誤った接続設定を自動修復する。
+if (syncConfig?.databaseUrl !== DEFAULT_SYNC_CONFIG.databaseUrl || syncConfig?.shareId !== DEFAULT_SYNC_CONFIG.shareId) {
+  syncConfig={...DEFAULT_SYNC_CONFIG};
+  try { localStorage.setItem(SYNC_CONFIG_KEY,JSON.stringify(syncConfig)); } catch(error) { console.error(error); }
+}
 let lastCloudUpdate = localStorage.getItem(SYNC_UPDATED_KEY) || "";
+let syncPending = localStorage.getItem(SYNC_PENDING_KEY) === "1";
+let applyingCloud = false;
 let activeCategory = "すべて";
 let purchasedOnly = false;
 
@@ -273,6 +280,7 @@ function persist(key, value) {
     const serialized = JSON.stringify(value);
     localStorage.setItem(key, serialized);
     if (localStorage.getItem(key) !== serialized) throw new Error("保存内容の照合に失敗");
+    if (!applyingCloud && [STORAGE_KEY,CUSTOM_KEY,HIDDEN_KEY,LOG_KEY].includes(key)) markCloudPending();
     showSaveStatus("✓ 保存済み", "saved");
     return true;
   } catch (error) {
@@ -293,6 +301,19 @@ function cloudEndpoint() {
   const id=safeShareId(syncConfig.shareId);
   return base && id ? `${base}/mangaStock/${encodeURIComponent(id)}.json` : "";
 }
+function cloudSnapshotsEndpoint() {
+  const root=cloudEndpoint();
+  return root ? root.replace(/\.json$/, "/snapshots.json") : "";
+}
+function markCloudPending() {
+  syncPending=true;
+  localStorage.setItem(SYNC_PENDING_KEY,"1");
+  if(document.getElementById("syncStatus")) setSyncStatus("未送信の変更があります（共有保存してください）",true);
+}
+function clearCloudPending() {
+  syncPending=false;
+  localStorage.removeItem(SYNC_PENDING_KEY);
+}
 function setSyncStatus(message,error=false) {
   const el=document.getElementById("syncStatus");
   el.textContent=message;
@@ -303,7 +324,7 @@ function setSyncBusy(busy) {
   document.getElementById("cloudLoad").disabled=busy;
 }
 function cloudSnapshot() {
-  return {version:4,updatedAt:new Date().toISOString(),state,custom,hiddenTitles,actionLog};
+  return {version:4.2,updatedAt:new Date().toISOString(),state,custom,hiddenTitles,actionLog};
 }
 function applyCloudSnapshot(data) {
   if (!data || typeof data!=="object") throw new Error("共有データが空です");
@@ -312,38 +333,84 @@ function applyCloudSnapshot(data) {
   custom=Array.isArray(data.custom)?data.custom:[];
   hiddenTitles=Array.isArray(data.hiddenTitles)?data.hiddenTitles:[];
   actionLog=Array.isArray(data.actionLog)?data.actionLog.slice(0,500):[];
-  if (!(saveState() && saveCustom() && saveHiddenTitles() && saveActionLog())) {
+  applyingCloud=true;
+  const savedLocally=saveState() && saveCustom() && saveHiddenTitles() && saveActionLog();
+  applyingCloud=false;
+  if (!savedLocally) {
     ({state,custom,hiddenTitles,actionLog}=previous);
     throw new Error("端末への保存に失敗しました");
   }
   lastCloudUpdate=data.updatedAt || new Date().toISOString();
   localStorage.setItem(SYNC_UPDATED_KEY,lastCloudUpdate);
 }
+function wait(ms) { return new Promise(resolve=>setTimeout(resolve,ms)); }
+async function fetchWithTimeout(url,options={},timeoutMs=20000) {
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),timeoutMs);
+  try { return await fetch(url,{...options,signal:controller.signal}); }
+  finally { clearTimeout(timer); }
+}
+function readableSyncError(error) {
+  if (error?.name==="AbortError") return "応答が時間内にありません";
+  return String(error?.message || error || "原因不明").slice(0,120);
+}
 async function uploadCloud() {
-  const endpoint=cloudEndpoint();
+  const endpoint=cloudSnapshotsEndpoint();
   if(!endpoint){openSyncSettings();return;}
+  markCloudPending();
   setSyncBusy(true); setSyncStatus("共有データを保存中…");
   try {
-    const response=await fetch(endpoint,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(cloudSnapshot())});
-    if(!response.ok) throw new Error(`通信エラー ${response.status}`);
-    const saved=await response.json();
-    lastCloudUpdate=saved.updatedAt || new Date().toISOString();
+    const snapshot=cloudSnapshot();
+    let lastError;
+    for (let attempt=1;attempt<=3;attempt++) {
+      try {
+        // POST + text/plain はiPhone Safariで失敗しやすい事前通信確認を発生させない。
+        const response=await fetchWithTimeout(endpoint,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:JSON.stringify(snapshot)});
+        if(!response.ok) throw new Error(`保存先からエラー ${response.status}`);
+        const result=await response.json();
+        if(!result?.name) throw new Error("保存完了を確認できません");
+        lastError=null;
+        break;
+      } catch(error) {
+        lastError=error;
+        if(attempt<3){setSyncStatus(`再送中… ${attempt}/3`);await wait(attempt*800);}
+      }
+    }
+    if(lastError) throw lastError;
+    lastCloudUpdate=snapshot.updatedAt;
     localStorage.setItem(SYNC_UPDATED_KEY,lastCloudUpdate);
+    clearCloudPending();
     setSyncStatus(`✓ 共有保存済み ${formatLogTime(lastCloudUpdate)}`);
   } catch(error) {
-    console.error(error); setSyncStatus("共有保存できません。設定または通信をご確認ください",true);
+    console.error(error);
+    setSyncStatus(`未送信・端末には保存済み（${readableSyncError(error)}）`,true);
   } finally {setSyncBusy(false);}
 }
 async function downloadCloud() {
-  const endpoint=cloudEndpoint();
-  if(!endpoint){openSyncSettings();return;}
+  const snapshotsEndpoint=cloudSnapshotsEndpoint();
+  const legacyEndpoint=cloudEndpoint();
+  if(!snapshotsEndpoint){openSyncSettings();return;}
+  if(syncPending) {
+    setSyncStatus("未送信の変更があります。先に「共有保存」を押してください",true);
+    return;
+  }
   setSyncBusy(true); setSyncStatus("最新データを確認中…");
   try {
-    const response=await fetch(endpoint,{cache:"no-store"});
+    const query='?orderBy=%22%24key%22&limitToLast=1';
+    let response=await fetchWithTimeout(snapshotsEndpoint+query,{cache:"no-store"});
     if(!response.ok) throw new Error(`通信エラー ${response.status}`);
-    const data=await response.json();
+    const snapshots=await response.json();
+    const latestKey=snapshots && Object.keys(snapshots)[0];
+    let data=latestKey ? snapshots[latestKey] : null;
+    // Pro 4.1以前の共有データを初回だけ引き継ぐ。
+    if(!data) {
+      response=await fetchWithTimeout(legacyEndpoint,{cache:"no-store"});
+      if(!response.ok) throw new Error(`通信エラー ${response.status}`);
+      data=await response.json();
+    }
     if(!data) throw new Error("まだ共有保存されていません");
     applyCloudSnapshot(data); render();
+    clearCloudPending();
     setSyncStatus(`✓ 最新に更新 ${formatLogTime(lastCloudUpdate)}`);
   } catch(error) {
     console.error(error); setSyncStatus(error.message || "更新できません",true);
@@ -678,7 +745,8 @@ try {
   showSaveStatus("保存できません", "error");
 }
 render();
-if(cloudEndpoint()) setSyncStatus(lastCloudUpdate?`前回同期 ${formatLogTime(lastCloudUpdate)}`:"共有設定済み");
+if(cloudEndpoint()) setSyncStatus(syncPending?"未送信の変更があります（共有保存してください）":(lastCloudUpdate?`前回同期 ${formatLogTime(lastCloudUpdate)}`:"共有設定済み"),syncPending);
+window.addEventListener("online",()=>{if(syncPending) uploadCloud();});
 </script>
 </body>
 </html>
