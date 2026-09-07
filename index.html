@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#080808">
-<title>漫画仕入れ管理 Pro 4.2</title>
+<title>漫画仕入れ管理 Pro 4.3</title>
 <style>
 :root {
   --bg:#090909; --panel:#161616; --panel2:#202020; --line:#343434;
@@ -119,7 +119,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:rgba(8,8,8,.96);border-
 
 <header>
   <div class="topline">
-    <h1>漫画仕入れ管理 Pro 4.2</h1>
+    <h1>漫画仕入れ管理 Pro 4.3</h1>
     <span class="badge" id="saveStatus" role="status" aria-live="polite">保存を確認中</span>
   </div>
   <div class="search">
@@ -324,12 +324,16 @@ function setSyncBusy(busy) {
   document.getElementById("cloudLoad").disabled=busy;
 }
 function cloudSnapshot() {
-  return {version:4.2,updatedAt:new Date().toISOString(),state,custom,hiddenTitles,actionLog};
+  // Firebaseでキーに使用できない . # $ / [ ] が作品名に含まれても保存できるよう、
+  // 購入状態はオブジェクトのキーではなく配列の値として送信する。
+  return {version:4.3,updatedAt:new Date().toISOString(),stateEntries:Object.entries(state),custom,hiddenTitles,actionLog};
 }
 function applyCloudSnapshot(data) {
   if (!data || typeof data!=="object") throw new Error("共有データが空です");
   const previous={state,custom,hiddenTitles,actionLog};
-  state=(data.state && typeof data.state==="object")?data.state:{};
+  state=Array.isArray(data.stateEntries)
+    ? Object.fromEntries(data.stateEntries.filter(row=>Array.isArray(row)&&row.length===2))
+    : ((data.state && typeof data.state==="object")?data.state:{});
   custom=Array.isArray(data.custom)?data.custom:[];
   hiddenTitles=Array.isArray(data.hiddenTitles)?data.hiddenTitles:[];
   actionLog=Array.isArray(data.actionLog)?data.actionLog.slice(0,500):[];
@@ -366,7 +370,10 @@ async function uploadCloud() {
       try {
         // POST + text/plain はiPhone Safariで失敗しやすい事前通信確認を発生させない。
         const response=await fetchWithTimeout(endpoint,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:JSON.stringify(snapshot)});
-        if(!response.ok) throw new Error(`保存先からエラー ${response.status}`);
+        if(!response.ok) {
+          const detail=(await response.text()).replace(/\s+/g," ").trim().slice(0,100);
+          throw new Error(`保存先エラー ${response.status}${detail?`：${detail}`:""}`);
+        }
         const result=await response.json();
         if(!result?.name) throw new Error("保存完了を確認できません");
         lastError=null;
