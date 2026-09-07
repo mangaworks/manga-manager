@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#080808">
-<title>漫画仕入れ管理 Pro 4.3</title>
+<title>漫画仕入れ管理 Pro 4.4</title>
 <style>
 :root {
   --bg:#090909; --panel:#161616; --panel2:#202020; --line:#343434;
@@ -119,7 +119,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:rgba(8,8,8,.96);border-
 
 <header>
   <div class="topline">
-    <h1>漫画仕入れ管理 Pro 4.3</h1>
+    <h1>漫画仕入れ管理 Pro 4.4</h1>
     <span class="badge" id="saveStatus" role="status" aria-live="polite">保存を確認中</span>
   </div>
   <div class="search">
@@ -206,6 +206,10 @@ const LOG_KEY = "mangaStockPro34ActionLog";
 const SYNC_CONFIG_KEY = "mangaStockPro40SyncConfig";
 const SYNC_UPDATED_KEY = "mangaStockPro40LastCloudUpdate";
 const SYNC_PENDING_KEY = "mangaStockPro42SyncPending";
+const STATE_META_KEY = "mangaStockPro44StateMeta";
+const CATALOG_META_KEY = "mangaStockPro44CatalogMeta";
+const ADD_DRAFT_KEY = "mangaStockPro44AddDraft";
+const AUTO_REFRESH_MS = 5000;
 const DEFAULT_SYNC_CONFIG = {
   databaseUrl:"https://manga-stock-manager-default-rtdb.asia-southeast1.firebasedatabase.app",
   shareId:"latte-manga-7f3c91b8a624"
@@ -220,9 +224,12 @@ function loadSaved(key, fallback) {
   }
 }
 let state = loadSaved(STORAGE_KEY, {});
+let stateMeta = loadSaved(STATE_META_KEY, {});
+if (!stateMeta || typeof stateMeta!=="object" || Array.isArray(stateMeta)) stateMeta={};
 let custom = loadSaved(CUSTOM_KEY, []);
 let hiddenTitles = loadSaved(HIDDEN_KEY, []);
 if (!Array.isArray(hiddenTitles)) hiddenTitles = [];
+let catalogUpdatedAt = Number(localStorage.getItem(CATALOG_META_KEY)||0);
 let actionLog = loadSaved(LOG_KEY, []);
 if (!Array.isArray(actionLog)) actionLog = [];
 let syncConfig = loadSaved(SYNC_CONFIG_KEY, DEFAULT_SYNC_CONFIG);
@@ -234,6 +241,21 @@ if (syncConfig?.databaseUrl !== DEFAULT_SYNC_CONFIG.databaseUrl || syncConfig?.s
 let lastCloudUpdate = localStorage.getItem(SYNC_UPDATED_KEY) || "";
 let syncPending = localStorage.getItem(SYNC_PENDING_KEY) === "1";
 let applyingCloud = false;
+let syncInFlight = false;
+let autoUploadTimer = null;
+let localChangeVersion = 0;
+let migratedStateMeta = false;
+// 未送信端末だけを「最新」とし、同期済みの古い端末が後から上書きしないようにする。
+const migrationTime=syncPending ? Date.now() : Math.max(1,Date.parse(lastCloudUpdate)||1);
+Object.keys(state).forEach(key=>{
+  if(!Number(stateMeta[key])){stateMeta[key]=migrationTime;migratedStateMeta=true;}
+});
+if(migratedStateMeta){
+  try {
+    localStorage.setItem(STATE_META_KEY,JSON.stringify(stateMeta));
+    if(syncPending)localStorage.setItem(SYNC_PENDING_KEY,"1");
+  } catch(error) { console.error(error); }
+}
 let activeCategory = "すべて";
 let purchasedOnly = false;
 
@@ -290,10 +312,22 @@ function persist(key, value) {
     return false;
   }
 }
-function saveState() { return persist(STORAGE_KEY, state); }
-function saveCustom() { return persist(CUSTOM_KEY, custom); }
-function saveHiddenTitles() { return persist(HIDDEN_KEY, hiddenTitles); }
+function saveState() {
+  return persist(STORAGE_KEY,state) && persist(STATE_META_KEY,stateMeta);
+}
+function saveCustom() {
+  const ok=persist(CUSTOM_KEY,custom);
+  try { localStorage.setItem(CATALOG_META_KEY,String(catalogUpdatedAt)); } catch(error) { return false; }
+  return ok;
+}
+function saveHiddenTitles() {
+  const ok=persist(HIDDEN_KEY,hiddenTitles);
+  try { localStorage.setItem(CATALOG_META_KEY,String(catalogUpdatedAt)); } catch(error) { return false; }
+  return ok;
+}
 function saveActionLog() { return persist(LOG_KEY, actionLog); }
+function touchStateKey(key) { stateMeta[key]=Date.now(); }
+function touchCatalog() { catalogUpdatedAt=Date.now(); }
 function normalizeDatabaseUrl(value) { return String(value || "").trim().replace(/\/+$/, ""); }
 function safeShareId(value) { return String(value || "").trim().replace(/[^a-zA-Z0-9_-]/g, "-").slice(0,80); }
 function cloudEndpoint() {
@@ -306,13 +340,21 @@ function cloudSnapshotsEndpoint() {
   return root ? root.replace(/\.json$/, "/snapshots.json") : "";
 }
 function markCloudPending() {
+  localChangeVersion++;
   syncPending=true;
   localStorage.setItem(SYNC_PENDING_KEY,"1");
-  if(document.getElementById("syncStatus")) setSyncStatus("未送信の変更があります（共有保存してください）",true);
+  if(document.getElementById("syncStatus")) setSyncStatus("未送信の変更があります（自動共有保存中）",true);
+  scheduleAutoUpload();
 }
 function clearCloudPending() {
   syncPending=false;
   localStorage.removeItem(SYNC_PENDING_KEY);
+}
+function scheduleAutoUpload(delay=1000) {
+  clearTimeout(autoUploadTimer);
+  autoUploadTimer=setTimeout(()=>{
+    if(syncPending && navigator.onLine && document.visibilityState==="visible") uploadCloud(true);
+  },delay);
 }
 function setSyncStatus(message,error=false) {
   const el=document.getElementById("syncStatus");
@@ -326,26 +368,56 @@ function setSyncBusy(busy) {
 function cloudSnapshot() {
   // Firebaseでキーに使用できない . # $ / [ ] が作品名に含まれても保存できるよう、
   // 購入状態はオブジェクトのキーではなく配列の値として送信する。
-  return {version:4.3,updatedAt:new Date().toISOString(),stateEntries:Object.entries(state),custom,hiddenTitles,actionLog};
+  return {
+    version:4.4,
+    updatedAt:new Date().toISOString(),
+    stateEntries:Object.entries(state),
+    stateMetaEntries:Object.entries(stateMeta),
+    custom,hiddenTitles,catalogUpdatedAt,actionLog
+  };
 }
-function applyCloudSnapshot(data) {
+function applyCloudSnapshot(data,{merge=false}={}) {
   if (!data || typeof data!=="object") throw new Error("共有データが空です");
-  const previous={state,custom,hiddenTitles,actionLog};
-  state=Array.isArray(data.stateEntries)
+  const previous={state,stateMeta,custom,hiddenTitles,catalogUpdatedAt,actionLog};
+  const remoteState=Array.isArray(data.stateEntries)
     ? Object.fromEntries(data.stateEntries.filter(row=>Array.isArray(row)&&row.length===2))
     : ((data.state && typeof data.state==="object")?data.state:{});
-  custom=Array.isArray(data.custom)?data.custom:[];
-  hiddenTitles=Array.isArray(data.hiddenTitles)?data.hiddenTitles:[];
-  actionLog=Array.isArray(data.actionLog)?data.actionLog.slice(0,500):[];
+  const remoteMeta=Array.isArray(data.stateMetaEntries)
+    ? Object.fromEntries(data.stateMetaEntries.filter(row=>Array.isArray(row)&&row.length===2))
+    : {};
+  let localNewer=false;
+  if(merge) {
+    const mergedState={},mergedMeta={};
+    const keys=new Set([...Object.keys(state),...Object.keys(remoteState)]);
+    keys.forEach(key=>{
+      const localTime=Number(stateMeta[key]||0),remoteTime=Number(remoteMeta[key]||0);
+      if(localTime>remoteTime){mergedState[key]=state[key];mergedMeta[key]=localTime;if(state[key]!==remoteState[key])localNewer=true;}
+      else {mergedState[key]=remoteState[key];mergedMeta[key]=remoteTime;}
+    });
+    state=mergedState;stateMeta=mergedMeta;
+  } else {
+    state=remoteState;stateMeta=remoteMeta;
+  }
+  const remoteCatalogTime=Number(data.catalogUpdatedAt||0);
+  if(!merge || remoteCatalogTime>=catalogUpdatedAt) {
+    custom=Array.isArray(data.custom)?data.custom:[];
+    hiddenTitles=Array.isArray(data.hiddenTitles)?data.hiddenTitles:[];
+    catalogUpdatedAt=remoteCatalogTime;
+  } else localNewer=true;
+  const combinedLogs=[...(Array.isArray(actionLog)?actionLog:[]),...(Array.isArray(data.actionLog)?data.actionLog:[])];
+  const seen=new Set();
+  actionLog=combinedLogs.filter(log=>{const id=[log?.time,log?.action,log?.detail].join("|");if(seen.has(id))return false;seen.add(id);return true;})
+    .sort((a,b)=>String(b?.time||"").localeCompare(String(a?.time||""))).slice(0,500);
   applyingCloud=true;
   const savedLocally=saveState() && saveCustom() && saveHiddenTitles() && saveActionLog();
   applyingCloud=false;
   if (!savedLocally) {
-    ({state,custom,hiddenTitles,actionLog}=previous);
+    ({state,stateMeta,custom,hiddenTitles,catalogUpdatedAt,actionLog}=previous);
     throw new Error("端末への保存に失敗しました");
   }
   lastCloudUpdate=data.updatedAt || new Date().toISOString();
   localStorage.setItem(SYNC_UPDATED_KEY,lastCloudUpdate);
+  return localNewer;
 }
 function wait(ms) { return new Promise(resolve=>setTimeout(resolve,ms)); }
 async function fetchWithTimeout(url,options={},timeoutMs=20000) {
@@ -358,11 +430,17 @@ function readableSyncError(error) {
   if (error?.name==="AbortError") return "応答が時間内にありません";
   return String(error?.message || error || "原因不明").slice(0,120);
 }
-async function uploadCloud() {
+async function uploadCloud(automatic=false) {
+  if(syncInFlight){if(automatic)scheduleAutoUpload(1500);return;}
+  syncInFlight=true;
   const endpoint=cloudSnapshotsEndpoint();
-  if(!endpoint){openSyncSettings();return;}
-  markCloudPending();
-  setSyncBusy(true); setSyncStatus("共有データを保存中…");
+  if(!endpoint){syncInFlight=false;openSyncSettings();return;}
+  // 手動保存は変更がなくても現在の状態を共有する。通信中に別の操作が
+  // 入った場合を見分けるため、開始時点の変更番号を保持する。
+  if(!syncPending)markCloudPending();
+  const uploadChangeVersion=localChangeVersion;
+  if(!automatic)setSyncBusy(true);
+  setSyncStatus(automatic?"自動共有保存中…":"共有データを保存中…");
   try {
     const snapshot=cloudSnapshot();
     let lastError;
@@ -386,22 +464,34 @@ async function uploadCloud() {
     if(lastError) throw lastError;
     lastCloudUpdate=snapshot.updatedAt;
     localStorage.setItem(SYNC_UPDATED_KEY,lastCloudUpdate);
-    clearCloudPending();
-    setSyncStatus(`✓ 共有保存済み ${formatLogTime(lastCloudUpdate)}`);
+    if(localChangeVersion===uploadChangeVersion) {
+      clearCloudPending();
+      setSyncStatus(`✓ 共有保存済み ${formatLogTime(lastCloudUpdate)}`);
+    } else {
+      setSyncStatus("新しい変更を続けて自動共有保存します");
+    }
   } catch(error) {
     console.error(error);
     setSyncStatus(`未送信・端末には保存済み（${readableSyncError(error)}）`,true);
-  } finally {setSyncBusy(false);}
+  } finally {
+    syncInFlight=false;
+    if(!automatic)setSyncBusy(false);
+    if(syncPending)scheduleAutoUpload(2500);
+  }
 }
-async function downloadCloud() {
+async function downloadCloud(automatic=false) {
+  if(syncInFlight)return;
   const snapshotsEndpoint=cloudSnapshotsEndpoint();
   const legacyEndpoint=cloudEndpoint();
   if(!snapshotsEndpoint){openSyncSettings();return;}
   if(syncPending) {
-    setSyncStatus("未送信の変更があります。先に「共有保存」を押してください",true);
+    if(!automatic)setSyncStatus("未送信の変更を自動共有保存してから更新します",true);
+    scheduleAutoUpload();
     return;
   }
-  setSyncBusy(true); setSyncStatus("最新データを確認中…");
+  syncInFlight=true;
+  const downloadChangeVersion=localChangeVersion;
+  if(!automatic){setSyncBusy(true);setSyncStatus("最新データを確認中…");}
   try {
     const query='?orderBy=%22%24key%22&limitToLast=1';
     let response=await fetchWithTimeout(snapshotsEndpoint+query,{cache:"no-store"});
@@ -416,12 +506,23 @@ async function downloadCloud() {
       data=await response.json();
     }
     if(!data) throw new Error("まだ共有保存されていません");
-    applyCloudSnapshot(data); render();
-    clearCloudPending();
-    setSyncStatus(`✓ 最新に更新 ${formatLogTime(lastCloudUpdate)}`);
+    const before=JSON.stringify([state,custom,hiddenTitles]);
+    const localNewer=applyCloudSnapshot(data,{merge:true});
+    const changed=before!==JSON.stringify([state,custom,hiddenTitles]);
+    if(changed)render();
+    const changedDuringDownload=localChangeVersion!==downloadChangeVersion;
+    if(!changedDuringDownload)clearCloudPending();
+    if(localNewer||changedDuringDownload){
+      if(!syncPending)markCloudPending();
+      scheduleAutoUpload();
+    }
+    else if(changed||!automatic)setSyncStatus(`✓ 最新に更新 ${formatLogTime(lastCloudUpdate)}`);
   } catch(error) {
-    console.error(error); setSyncStatus(error.message || "更新できません",true);
-  } finally {setSyncBusy(false);}
+    console.error(error);if(!automatic)setSyncStatus(error.message || "更新できません",true);
+  } finally {
+    syncInFlight=false;
+    if(!automatic)setSyncBusy(false);
+  }
 }
 function addLog(action, detail) {
   const previous = actionLog.slice();
@@ -548,9 +649,12 @@ function render() {
     const category=decodeURIComponent(button.dataset.category);
     const title=decodeURIComponent(button.dataset.title);
     const key=titleKey(category,title);
+    const previousCatalogUpdatedAt=catalogUpdatedAt;
+    touchCatalog();
     if (!hiddenTitles.includes(key)) hiddenTitles.push(key);
     if(!saveHiddenTitles()){
       hiddenTitles=hiddenTitles.filter(value=>value!==key);
+      catalogUpdatedAt=previousCatalogUpdatedAt;
       return;
     }
     const previousCustom=JSON.parse(JSON.stringify(custom));
@@ -558,11 +662,12 @@ function render() {
     if(!saveCustom()){
       custom=previousCustom;
       hiddenTitles=hiddenTitles.filter(value=>value!==key);
+      catalogUpdatedAt=previousCatalogUpdatedAt;
       saveHiddenTitles();
       return;
     }
     Object.keys(state).forEach(savedKey=>{
-      if(savedKey.startsWith(category+"|"+title+"|")) delete state[savedKey];
+      if(savedKey.startsWith(category+"|"+title+"|")){state[savedKey]=false;touchStateKey(savedKey);}
     });
     saveState();
     addLog("作品削除", title);
@@ -578,9 +683,12 @@ function render() {
       showPurchaseCancel(ch.dataset.key,title,volume);
       return;
     }
+    const previousMeta=stateMeta[ch.dataset.key];
     state[ch.dataset.key] = !previous;
+    touchStateKey(ch.dataset.key);
     if (!saveState()) {
       state[ch.dataset.key] = previous;
+      if(previousMeta===undefined)delete stateMeta[ch.dataset.key];else stateMeta[ch.dataset.key]=previousMeta;
       return;
     }
     ch.classList.toggle("done", !!state[ch.dataset.key]);
@@ -592,9 +700,12 @@ function render() {
     e.stopPropagation();
     const k=row.dataset.key, need=Number(row.dataset.need);
     let val=Number(state[k]||0);
+    const previousMeta=stateMeta[k];
     state[k] = val >= need ? 0 : val+1;
+    touchStateKey(k);
     if (!saveState()) {
       state[k] = val;
+      if(previousMeta===undefined)delete stateMeta[k];else stateMeta[k]=previousMeta;
       return;
     }
     const [category,title,gi,vi]=k.split("|");
@@ -659,8 +770,8 @@ document.getElementById("saveSyncSettings").onclick=()=>{
   syncModal.classList.remove("show");
   setSyncStatus("共有設定済み。最初に「共有保存」を押してください");
 };
-document.getElementById("cloudSave").onclick=uploadCloud;
-document.getElementById("cloudLoad").onclick=downloadCloud;
+document.getElementById("cloudSave").onclick=()=>uploadCloud(false);
+document.getElementById("cloudLoad").onclick=()=>downloadCloud(false);
 
 function showPurchaseCancel(key,title,volume) {
   pendingPurchaseCancel={key,title,volume};
@@ -678,9 +789,12 @@ document.getElementById("confirmPurchaseCancel").onclick=()=>{
   if (!pendingPurchaseCancel) return;
   const {key,title,volume}=pendingPurchaseCancel;
   const previous=!!state[key];
+  const previousMeta=stateMeta[key];
   state[key]=false;
+  touchStateKey(key);
   if (!saveState()) {
     state[key]=previous;
+    if(previousMeta===undefined)delete stateMeta[key];else stateMeta[key]=previousMeta;
     return;
   }
   closePurchaseCancel();
@@ -713,9 +827,26 @@ document.getElementById("clearLog").onclick=()=>{
   document.getElementById("clearLog").textContent="履歴を消去";
   renderLog();
 };
-document.getElementById("addTitle").onclick=()=>modal.classList.add("show");
+function saveAddDraft() {
+  const draft={
+    category:document.getElementById("newCategory").value,
+    title:document.getElementById("newTitle").value,
+    finalVolume:document.getElementById("newFinalVolume").value
+  };
+  try { localStorage.setItem(ADD_DRAFT_KEY,JSON.stringify(draft)); } catch(error) { console.error(error); }
+}
+function restoreAddDraft() {
+  const draft=loadSaved(ADD_DRAFT_KEY,{});
+  if(draft.category)document.getElementById("newCategory").value=draft.category;
+  if(draft.title)document.getElementById("newTitle").value=draft.title;
+  if(draft.finalVolume)document.getElementById("newFinalVolume").value=draft.finalVolume;
+}
+document.getElementById("addTitle").onclick=()=>{restoreAddDraft();modal.classList.add("show");};
 document.getElementById("cancelAdd").onclick=()=>modal.classList.remove("show");
 document.getElementById("newCategory").innerHTML = allData().map(x=>`<option>${x.category}</option>`).join("");
+document.getElementById("newCategory").addEventListener("change",saveAddDraft);
+document.getElementById("newTitle").addEventListener("input",saveAddDraft);
+document.getElementById("newFinalVolume").addEventListener("input",saveAddDraft);
 document.getElementById("saveAdd").onclick=()=>{
   const category=document.getElementById("newCategory").value;
   const title=document.getElementById("newTitle").value.trim();
@@ -726,14 +857,18 @@ document.getElementById("saveAdd").onclick=()=>{
   const added = {category,item:{title,finalVolume,groups:[{label:`全巻（1〜${finalVolume}巻）`,mode:"missing",values}]}};
   const existingIndex=custom.findIndex(value=>value.category===category&&value.item?.title===title);
   const previousCustom=JSON.parse(JSON.stringify(custom));
+  const previousCatalogUpdatedAt=catalogUpdatedAt;
+  touchCatalog();
   if(existingIndex>=0) custom[existingIndex]=added;
   else custom.push(added);
   if (!saveCustom()) {
     custom=previousCustom;
+    catalogUpdatedAt=previousCatalogUpdatedAt;
     return;
   }
   document.getElementById("newTitle").value="";
   document.getElementById("newFinalVolume").value="";
+  localStorage.removeItem(ADD_DRAFT_KEY);
   modal.classList.remove("show");
   addLog(existingIndex>=0 ? "作品更新" : "作品追加", `${title}（全${finalVolume}巻）`);
   render();
@@ -752,8 +887,16 @@ try {
   showSaveStatus("保存できません", "error");
 }
 render();
-if(cloudEndpoint()) setSyncStatus(syncPending?"未送信の変更があります（共有保存してください）":(lastCloudUpdate?`前回同期 ${formatLogTime(lastCloudUpdate)}`:"共有設定済み"),syncPending);
-window.addEventListener("online",()=>{if(syncPending) uploadCloud();});
+if(cloudEndpoint()) setSyncStatus(syncPending?"未送信の変更があります（自動共有保存中）":(lastCloudUpdate?`自動同期 ON・前回 ${formatLogTime(lastCloudUpdate)}`:"自動同期 ON"),syncPending);
+window.addEventListener("online",()=>{if(syncPending)uploadCloud(true);else downloadCloud(true);});
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState!=="visible")return;
+  if(syncPending)scheduleAutoUpload(300);else downloadCloud(true);
+});
+setInterval(()=>{
+  if(document.visibilityState==="visible"&&!syncPending)downloadCloud(true);
+},AUTO_REFRESH_MS);
+if(syncPending)scheduleAutoUpload(800);else setTimeout(()=>downloadCloud(true),1200);
 </script>
 </body>
 </html>
