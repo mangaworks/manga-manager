@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080808">
+<title>初版掲載画像 Pro</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#080808;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue","Noto Sans JP",sans-serif}
+main{max-width:720px;margin:auto;padding:18px 14px 42px}
+h1{margin:2px 0 20px;color:#ffd23f;font-size:25px}
+label{display:block;margin:15px 0 7px;font-weight:800;color:#ddd}
+input{width:100%;height:56px;padding:0 14px;border:1px solid #555;border-radius:13px;background:#1c1c1c;color:#fff;font-size:20px}
+#numbers{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:18px}
+.num{height:64px;border:2px solid #555;border-radius:13px;background:#252525;color:#fff;font-size:26px;font-weight:900}
+.num.on{background:#31cf7c;border-color:#31cf7c;color:#07150d}
+.help{margin-top:10px;color:#999;font-size:13px}
+.actions{display:grid;grid-template-columns:1fr 1.5fr;gap:10px;margin-top:20px}
+.actions button{height:58px;border-radius:14px;font-size:17px;font-weight:900}
+.clear{background:#252525;color:#fff;border:1px solid #555}
+.save{background:#ff9500;color:#111;border:0}
+</style>
+</head>
+<body>
+<main>
+<h1>初版掲載画像</h1>
+
+<label for="title">作品名</label>
+<input id="title" type="text" autocomplete="off">
+
+<label for="total">全巻</label>
+<input id="total" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+
+<div id="numbers"></div>
+<div class="help">初版の巻をタップしてください。選択済みの巻を再タップした場合は解除確認が出ます。</div>
+
+<div class="actions">
+<button id="clear" class="clear" type="button">全クリア</button>
+<button id="save" class="save" type="button">掲載画像を保存</button>
+</div>
+</main>
+
+<script>
+(function(){
+"use strict";
+var title=document.getElementById("title");
+var total=document.getElementById("total");
+var numbers=document.getElementById("numbers");
+var selected={};
+
+function numericValue(){
+  var s=String(total.value||"").replace(/[^0-9]/g,"");
+  return parseInt(s,10)||0;
+}
+function render(){
+  var n=numericValue();
+  if(n>150)n=150;
+  numbers.innerHTML="";
+  if(n<1)return;
+  for(var i=1;i<=n;i++){
+    var b=document.createElement("button");
+    b.type="button";
+    b.className=selected[i]?"num on":"num";
+    b.textContent=String(i);
+    b.setAttribute("data-volume",String(i));
+    numbers.appendChild(b);
+  }
+}
+numbers.addEventListener("click",function(e){
+  var b=e.target.closest("button[data-volume]");
+  if(!b)return;
+  var v=parseInt(b.getAttribute("data-volume"),10);
+  if(selected[v]){
+    if(window.confirm(v+"巻の初版登録を解除しますか？")){
+      delete selected[v];
+      b.className="num";
+    }
+  }else{
+    selected[v]=true;
+    b.className="num on";
+  }
+});
+function changed(){
+  selected={};
+  render();
+}
+total.addEventListener("input",changed);
+total.addEventListener("keyup",render);
+total.addEventListener("change",render);
+total.addEventListener("paste",function(){setTimeout(changed,0);});
+
+function resetAll(){
+  title.value="";
+  total.value="";
+  selected={};
+  render();
+  title.focus();
+}
+document.getElementById("clear").addEventListener("click",function(){
+  if(window.confirm("入力内容をすべて消去しますか？"))resetAll();
+});
+
+function roundedRect(ctx,x,y,w,h,r){
+  var rr=Math.min(r,w/2,h/2);
+  ctx.beginPath();ctx.moveTo(x+rr,y);ctx.arcTo(x+w,y,x+w,y+h,rr);
+  ctx.arcTo(x+w,y+h,x,y+h,rr);ctx.arcTo(x,y,x+w,y,rr);
+  ctx.arcTo(x,y,x+w,y,rr);ctx.closePath();
+}
+document.getElementById("save").addEventListener("click",function(){
+  var n=numericValue();
+  if(n<1){alert("全巻数を入力してください。");return;}
+  if(n>150)n=150;
+  var canvas=document.createElement("canvas");
+  canvas.width=720;canvas.height=720;
+  var c=canvas.getContext("2d");
+  c.fillStyle="#fff";c.fillRect(0,0,720,720);
+  c.strokeStyle="#ff9500";c.lineWidth=24;roundedRect(c,14,14,692,692,22);c.stroke();
+  c.textAlign="center";c.textBaseline="middle";c.fillStyle="#111";
+  c.font="900 38px -apple-system,BlinkMacSystemFont,sans-serif";
+  c.fillText(title.value.trim()||"初版巻一覧",360,70);
+  c.font="800 25px -apple-system,BlinkMacSystemFont,sans-serif";
+  c.fillText("全"+n+"巻セット　初版巻",360,116);
+
+  var cols=n<=35?5:6, rows=Math.ceil(n/cols);
+  var gapX=9,gapY=8,left=45,top=153,bottom=42;
+  var bw=(630-gapX*(cols-1))/cols;
+  var bh=Math.min(61,(720-top-bottom-gapY*(rows-1))/rows);
+  for(var k=1;k<=n;k++){
+    var row=Math.floor((k-1)/cols),col=(k-1)%cols;
+    var x=left+col*(bw+gapX),y=top+row*(bh+gapY);
+    c.fillStyle=selected[k]?"#31cf7c":"#ededed";
+    roundedRect(c,x,y,bw,bh,10);c.fill();
+    c.fillStyle="#111";
+    c.font="900 "+Math.max(15,Math.min(27,bh*.48))+"px -apple-system,BlinkMacSystemFont,sans-serif";
+    c.fillText(String(k),x+bw/2,y+bh/2);
+  }
+  var a=document.createElement("a");
+  a.download=(title.value.trim()||"初版巻一覧")+"_初版.png";
+  a.href=canvas.toDataURL("image/png");
+  document.body.appendChild(a);a.click();a.remove();
+  resetAll();
+});
+render();
+})();
+</script>
+</body>
+</html>
