@@ -7,7 +7,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>初版掲載画像 Pro 1.2</title>
+<title>初版掲載画像 Pro 1.3</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#080808;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue","Noto Sans JP",sans-serif}
@@ -28,7 +28,7 @@ input{width:100%;height:56px;padding:0 14px;border:1px solid #555;border-radius:
 </head>
 <body>
 <main>
-<h1>初版掲載画像 Pro 1.2</h1>
+<h1>初版掲載画像 Pro 1.3</h1>
 
 <label for="title">作品名</label>
 <input id="title" type="text" autocomplete="off">
@@ -37,7 +37,7 @@ input{width:100%;height:56px;padding:0 14px;border:1px solid #555;border-radius:
 <input id="total" type="text" inputmode="numeric" pattern="[0-9０-９]*" enterkeyhint="done" autocomplete="off">
 
 <div id="numbers"></div>
-<div class="help">初版の巻をタップしてください。選択済みの巻を再タップした場合は解除確認が出ます。</div>
+<div class="help">緑色が初版巻です。初版の巻をタップしてください。選択済みの巻を再タップした場合は解除確認が出ます。</div>
 
 <div class="actions">
 <button id="clear" class="clear" type="button">全クリア</button>
@@ -153,71 +153,47 @@ document.getElementById("save").addEventListener("click",function(){
   var n=numericValue();
   if(n<1){alert("全巻数を入力してください。");return;}
   if(n>150)n=150;
-
   var canvas=document.createElement("canvas");
-  canvas.width=720;
-  canvas.height=720;
+  canvas.width=720;canvas.height=720;
   var c=canvas.getContext("2d");
-
-  c.fillStyle="#080808";
-  c.fillRect(0,0,720,720);
-
-  c.strokeStyle="#ff9500";
-  c.lineWidth=24;
-  roundedRect(c,14,14,692,692,22);
-  c.stroke();
-
-  c.textAlign="center";
-  c.textBaseline="middle";
-  c.fillStyle="#fff";
+  c.fillStyle="#080808";c.fillRect(0,0,720,720);
+  c.strokeStyle="#ff9500";c.lineWidth=24;roundedRect(c,14,14,692,692,22);c.stroke();
+  c.textAlign="center";c.textBaseline="middle";c.fillStyle="#fff";
   c.font="900 38px -apple-system,BlinkMacSystemFont,sans-serif";
   c.fillText(title.value.trim()||"初版巻一覧",360,70);
-
   c.fillStyle="#ffd23f";
   c.font="800 25px -apple-system,BlinkMacSystemFont,sans-serif";
   c.fillText("全"+n+"巻セット　初版巻",360,116);
 
-  var cols=n<=35?5:6;
-  var rows=Math.ceil(n/cols);
-  var gapX=9,gapY=8,left=45,top=153,bottom=42;
+  c.fillStyle="#31cf7c";
+  roundedRect(c,252,137,22,22,6);c.fill();
+  c.fillStyle="#fff";
+  c.font="800 18px -apple-system,BlinkMacSystemFont,sans-serif";
+  c.fillText("緑色は初版巻です",374,148);
+
+  var cols=n<=35?5:6, rows=Math.ceil(n/cols);
+  var gapX=9,gapY=8,left=45,top=176,bottom=42;
   var bw=(630-gapX*(cols-1))/cols;
   var bh=Math.min(61,(720-top-bottom-gapY*(rows-1))/rows);
-
   c.textAlign="center";
   c.textBaseline="middle";
-
   for(var k=1;k<=n;k++){
-    var row=Math.floor((k-1)/cols);
-    var col=(k-1)%cols;
-    var x=left+col*(bw+gapX);
-    var y=top+row*(bh+gapY);
-
+    var row=Math.floor((k-1)/cols),col=(k-1)%cols;
+    var x=left+col*(bw+gapX),y=top+row*(bh+gapY);
     c.fillStyle=selected[k]?"#31cf7c":"#252525";
-    roundedRect(c,x,y,bw,bh,14);
-    c.fill();
-
+    roundedRect(c,x,y,bw,bh,14);c.fill();
     c.fillStyle=selected[k]?"#07150d":"#fff";
     c.font="900 "+Math.max(15,Math.min(27,bh*.48))+"px -apple-system,BlinkMacSystemFont,sans-serif";
     c.fillText(String(k),Math.round(x+bw/2),Math.round(y+bh/2)+1);
   }
-
   var fileName=(title.value.trim()||"初版巻一覧")+"_初版.png";
   var blob=dataUrlToBlob(canvas.toDataURL("image/png"));
   var file;
-
-  try{
-    file=new File([blob],fileName,{type:"image/png"});
-  }catch(e){
-    file=null;
-  }
+  try{file=new File([blob],fileName,{type:"image/png"});}catch(e){file=null;}
 
   if(isIOS()&&file&&navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
     status.textContent="共有画面で「画像を保存」を選んでください。";
-
-    navigator.share({
-      files:[file],
-      title:"初版掲載画像"
-    }).then(function(){
+    navigator.share({files:[file],title:"初版掲載画像"}).then(function(){
       status.textContent="画像の共有が完了しました。";
       resetAll();
     }).catch(function(err){
