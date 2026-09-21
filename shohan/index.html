@@ -124,8 +124,6 @@ function roundedRect(ctx,x,y,w,h,r){
   ctx.quadraticCurveTo(x+w,y+h,x+w-rr,y+h);
   ctx.lineTo(x+rr,y+h);
   ctx.quadraticCurveTo(x,y+h,x,y+h-rr);
-  ctx.lineTo(x+rr,y+h);
-  ctx.quadraticCurveTo(x,y+h,x,y+h-rr);
   ctx.lineTo(x,y+rr);
   ctx.quadraticCurveTo(x,y,x+rr,y);
   ctx.closePath();
