@@ -4,7 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#080808">
-<title>初版掲載画像 Pro</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>初版掲載画像 Pro 1.2</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#080808;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue","Noto Sans JP",sans-serif}
@@ -20,17 +23,18 @@ input{width:100%;height:56px;padding:0 14px;border:1px solid #555;border-radius:
 .actions button{height:58px;border-radius:14px;font-size:17px;font-weight:900}
 .clear{background:#252525;color:#fff;border:1px solid #555}
 .save{background:#ff9500;color:#111;border:0}
+.status{min-height:24px;margin-top:12px;color:#ffd23f;font-size:14px;font-weight:800;text-align:center}
 </style>
 </head>
 <body>
 <main>
-<h1>初版掲載画像</h1>
+<h1>初版掲載画像 Pro 1.2</h1>
 
 <label for="title">作品名</label>
 <input id="title" type="text" autocomplete="off">
 
 <label for="total">全巻</label>
-<input id="total" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+<input id="total" type="text" inputmode="numeric" pattern="[0-9０-９]*" enterkeyhint="done" autocomplete="off">
 
 <div id="numbers"></div>
 <div class="help">初版の巻をタップしてください。選択済みの巻を再タップした場合は解除確認が出ます。</div>
@@ -39,6 +43,7 @@ input{width:100%;height:56px;padding:0 14px;border:1px solid #555;border-radius:
 <button id="clear" class="clear" type="button">全クリア</button>
 <button id="save" class="save" type="button">掲載画像を保存</button>
 </div>
+<div id="status" class="status" aria-live="polite"></div>
 </main>
 
 <script>
@@ -47,10 +52,16 @@ input{width:100%;height:56px;padding:0 14px;border:1px solid #555;border-radius:
 var title=document.getElementById("title");
 var total=document.getElementById("total");
 var numbers=document.getElementById("numbers");
+var status=document.getElementById("status");
 var selected={};
 
+function normalizeDigits(value){
+  return String(value||"").replace(/[０-９]/g,function(ch){
+    return String.fromCharCode(ch.charCodeAt(0)-65248);
+  });
+}
 function numericValue(){
-  var s=String(total.value||"").replace(/[^0-9]/g,"");
+  var s=normalizeDigits(total.value).replace(/[^0-9]/g,"");
   return parseInt(s,10)||0;
 }
 function render(){
@@ -86,8 +97,10 @@ function changed(){
   render();
 }
 total.addEventListener("input",changed);
-total.addEventListener("keyup",render);
-total.addEventListener("change",render);
+total.addEventListener("keyup",changed);
+total.addEventListener("change",changed);
+total.addEventListener("blur",render);
+total.addEventListener("compositionend",changed);
 total.addEventListener("paste",function(){setTimeout(changed,0);});
 
 function resetAll(){
@@ -103,43 +116,123 @@ document.getElementById("clear").addEventListener("click",function(){
 
 function roundedRect(ctx,x,y,w,h,r){
   var rr=Math.min(r,w/2,h/2);
-  ctx.beginPath();ctx.moveTo(x+rr,y);ctx.arcTo(x+w,y,x+w,y+h,rr);
-  ctx.arcTo(x+w,y+h,x,y+h,rr);ctx.arcTo(x,y,x+w,y,rr);
-  ctx.arcTo(x,y,x+w,y,rr);ctx.closePath();
+  ctx.beginPath();
+  ctx.moveTo(x+rr,y);
+  ctx.lineTo(x+w-rr,y);
+  ctx.quadraticCurveTo(x+w,y,x+w,y+rr);
+  ctx.lineTo(x+w,y+h-rr);
+  ctx.quadraticCurveTo(x+w,y+h,x+w-rr,y+h);
+  ctx.lineTo(x+rr,y+h);
+  ctx.quadraticCurveTo(x,y+h,x,y+h-rr);
+  ctx.lineTo(x,y+rr);
+  ctx.quadraticCurveTo(x,y,x+rr,y);
+  ctx.closePath();
+}
+function dataUrlToBlob(dataUrl){
+  var parts=dataUrl.split(",");
+  var bytes=atob(parts[1]);
+  var array=new Uint8Array(bytes.length);
+  for(var i=0;i<bytes.length;i++)array[i]=bytes.charCodeAt(i);
+  return new Blob([array],{type:"image/png"});
+}
+function isIOS(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent)||
+    (navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+}
+function downloadBlob(blob,fileName){
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement("a");
+  a.download=fileName;
+  a.href=url;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(function(){URL.revokeObjectURL(url);},30000);
 }
 document.getElementById("save").addEventListener("click",function(){
   var n=numericValue();
   if(n<1){alert("全巻数を入力してください。");return;}
   if(n>150)n=150;
+
   var canvas=document.createElement("canvas");
-  canvas.width=720;canvas.height=720;
+  canvas.width=720;
+  canvas.height=720;
   var c=canvas.getContext("2d");
-  c.fillStyle="#fff";c.fillRect(0,0,720,720);
-  c.strokeStyle="#ff9500";c.lineWidth=24;roundedRect(c,14,14,692,692,22);c.stroke();
-  c.textAlign="center";c.textBaseline="middle";c.fillStyle="#111";
+
+  c.fillStyle="#080808";
+  c.fillRect(0,0,720,720);
+
+  c.strokeStyle="#ff9500";
+  c.lineWidth=24;
+  roundedRect(c,14,14,692,692,22);
+  c.stroke();
+
+  c.textAlign="center";
+  c.textBaseline="middle";
+  c.fillStyle="#fff";
   c.font="900 38px -apple-system,BlinkMacSystemFont,sans-serif";
   c.fillText(title.value.trim()||"初版巻一覧",360,70);
+
+  c.fillStyle="#ffd23f";
   c.font="800 25px -apple-system,BlinkMacSystemFont,sans-serif";
   c.fillText("全"+n+"巻セット　初版巻",360,116);
 
-  var cols=n<=35?5:6, rows=Math.ceil(n/cols);
+  var cols=n<=35?5:6;
+  var rows=Math.ceil(n/cols);
   var gapX=9,gapY=8,left=45,top=153,bottom=42;
   var bw=(630-gapX*(cols-1))/cols;
   var bh=Math.min(61,(720-top-bottom-gapY*(rows-1))/rows);
+
+  c.textAlign="center";
+  c.textBaseline="middle";
+
   for(var k=1;k<=n;k++){
-    var row=Math.floor((k-1)/cols),col=(k-1)%cols;
-    var x=left+col*(bw+gapX),y=top+row*(bh+gapY);
-    c.fillStyle=selected[k]?"#31cf7c":"#ededed";
-    roundedRect(c,x,y,bw,bh,10);c.fill();
-    c.fillStyle="#111";
+    var row=Math.floor((k-1)/cols);
+    var col=(k-1)%cols;
+    var x=left+col*(bw+gapX);
+    var y=top+row*(bh+gapY);
+
+    c.fillStyle=selected[k]?"#31cf7c":"#252525";
+    roundedRect(c,x,y,bw,bh,14);
+    c.fill();
+
+    c.fillStyle=selected[k]?"#07150d":"#fff";
     c.font="900 "+Math.max(15,Math.min(27,bh*.48))+"px -apple-system,BlinkMacSystemFont,sans-serif";
-    c.fillText(String(k),x+bw/2,y+bh/2);
+    c.fillText(String(k),Math.round(x+bw/2),Math.round(y+bh/2)+1);
   }
-  var a=document.createElement("a");
-  a.download=(title.value.trim()||"初版巻一覧")+"_初版.png";
-  a.href=canvas.toDataURL("image/png");
-  document.body.appendChild(a);a.click();a.remove();
-  resetAll();
+
+  var fileName=(title.value.trim()||"初版巻一覧")+"_初版.png";
+  var blob=dataUrlToBlob(canvas.toDataURL("image/png"));
+  var file;
+
+  try{
+    file=new File([blob],fileName,{type:"image/png"});
+  }catch(e){
+    file=null;
+  }
+
+  if(isIOS()&&file&&navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+    status.textContent="共有画面で「画像を保存」を選んでください。";
+
+    navigator.share({
+      files:[file],
+      title:"初版掲載画像"
+    }).then(function(){
+      status.textContent="画像の共有が完了しました。";
+      resetAll();
+    }).catch(function(err){
+      if(err&&err.name==="AbortError"){
+        status.textContent="保存はキャンセルされました。入力内容は残っています。";
+        return;
+      }
+      downloadBlob(blob,fileName);
+      status.textContent="画像を開きました。長押しして「写真に保存」を選んでください。";
+    });
+  }else{
+    downloadBlob(blob,fileName);
+    status.textContent="画像を保存しました。";
+    resetAll();
+  }
 });
 render();
 })();
